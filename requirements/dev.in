@@ -1,0 +1,1 @@
+-e git+https://github.com/kytos-ng/kytos.git#egg=kytos[dev]
