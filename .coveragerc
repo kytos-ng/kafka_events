@@ -1,0 +1,6 @@
+[run]
+source = .
+omit = .eggs/*,.tox/*,*tests*,setup.py,.direnv/*,.venv/*,venv/*
+
+[xml]
+output=coverage.xml
