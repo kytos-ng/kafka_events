@@ -1,0 +1,5 @@
+[MASTER]
+max-line-length = 100
+
+[MESSAGES CONTROL]
+disable = too-few-public-methods,protected-access

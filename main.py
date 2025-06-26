@@ -2,10 +2,12 @@
 
 from kytos.core import KytosNApp, log
 
+
 class Main(KytosNApp):
     """
     Main class of the Kytos/kafka_events NApp.
     """
+
     def setup(self):
         """
         Setup the kafka_events/Kytos NApp
