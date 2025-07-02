@@ -1,6 +1,11 @@
 """ Kytos/kafka_events """
 
-from kytos.core import KytosNApp, log
+import asyncio
+from asyncio import AbstractEventLoop
+from kytos.core import KytosNApp, log, KytosEvent
+from kytos.core.helpers import alisten_to
+from managers.kafka.interface import KafkaManager
+from managers.kafka.handler import KafkaDomainManager
 
 
 class Main(KytosNApp):
@@ -14,6 +19,11 @@ class Main(KytosNApp):
         """
         log.info("SETUP Kytos/kafka_events")
 
+        self._kafka_handler: KafkaManager = KafkaDomainManager()
+        self._async_loop: AbstractEventLoop = asyncio.get_running_loop()
+
+        self._async_loop.create_task(self._kafka_handler.setup())
+
     def execute(self):
         """
         Setup the kafka_events/Kytos NApp
@@ -25,3 +35,15 @@ class Main(KytosNApp):
         Execute when your napp is unloaded.
         """
         log.info("SHUTDOWN kafka_events/Kytos")
+        self._kafka_handler.shutdown(self._async_loop)
+
+    @alisten_to(".*")
+    async def handle_events(self, event: KytosEvent):
+        """
+        Handle and process KytosEvents
+
+        Accepts every propagated event (uses .* regex syntax)
+        """
+        self._async_loop.create_task(
+            self._kafka_handler.send(event.name, event.content)
+        )

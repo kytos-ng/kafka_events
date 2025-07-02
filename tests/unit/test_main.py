@@ -1,6 +1,6 @@
 """ Test suite """
 
-from ...main import Main
+from kafka_events.main import Main
 
 
 class TestMain:
