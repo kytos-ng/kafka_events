@@ -1,9 +1,9 @@
 """ The implementation class for KafkaManager, the public interface used by main. """
 
 import asyncio
-from interface import KafkaManager
-from _producer import Producer
-from _serializer import JSONSerializer
+from kafka_events.managers.kafka.interface import KafkaManager
+from kafka_events.managers.kafka._producer import Producer
+from kafka_events.managers.kafka._serializer import JSONSerializer
 from kafka_events.settings import (
     BOOTSTRAP_SERVERS,
     ACKS,
@@ -12,6 +12,7 @@ from kafka_events.settings import (
     BATCH_SIZE,
     LINGER_MS,
     MAX_REQUEST_SIZE,
+    PRODUCER_COROUTINE_NAMES,
 )
 
 
@@ -67,5 +68,8 @@ class KafkaDomainManager(KafkaManager):
         before this occurs, the producer's routine cannot be awaited. Thus, we need to cancel
         all messages manually
         """
+        coroutine_names = set(PRODUCER_COROUTINE_NAMES.values())
+
         for task in asyncio.all_tasks(loop):
-            task.cancel()
+            if task.get_name() in coroutine_names:
+                task.cancel()

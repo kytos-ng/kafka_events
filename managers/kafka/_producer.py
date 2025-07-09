@@ -2,7 +2,7 @@
 
 import asyncio
 from aiokafka import AIOKafkaProducer
-from kafka_events.settings import KAFKA_TIMELIMIT
+from kafka_events.settings import KAFKA_TIMELIMIT, PRODUCER_COROUTINE_NAMES
 
 
 class Producer:
@@ -37,16 +37,22 @@ class Producer:
         """
         Initialize the producer using AIOKafkaProducer's built in setup method
         """
-        await asyncio.wait_for(self._producer.start(), KAFKA_TIMELIMIT)
+        asyncio.create_task(
+            asyncio.wait_for(self._producer.start(), KAFKA_TIMELIMIT),
+            name=PRODUCER_COROUTINE_NAMES.get("initialize"),
+        )
 
-    async def send_data(self, serialized_data: str) -> None:
+    async def send_data(self, encoded_data: bytes) -> None:
         """
         Send data to AIOKafkaProducer's batch, which is then sent to Kafka after a short delay.
 
         The incoming data must already have been serialized.
         """
-        await asyncio.wait_for(
-            self._producer.send(self._topic, serialized_data), KAFKA_TIMELIMIT
+        asyncio.create_task(
+            asyncio.wait_for(
+                self._producer.send(self._topic, encoded_data), KAFKA_TIMELIMIT
+            ),
+            name=PRODUCER_COROUTINE_NAMES.get("send"),
         )
 
     def is_ready(self) -> bool:

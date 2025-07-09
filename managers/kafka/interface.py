@@ -1,5 +1,6 @@
 """ An abstract base class used for abstracting the contents of the Kafka domain away from main """
 
+from asyncio import AbstractEventLoop
 from abc import ABC, abstractmethod
 
 
@@ -15,5 +16,5 @@ class KafkaManager(ABC):
         """The public method to setup the producer instance"""
 
     @abstractmethod
-    def shutdown(self) -> None:
+    def shutdown(self, loop: AbstractEventLoop) -> None:
         """The public method to shutdown the producer instance"""
