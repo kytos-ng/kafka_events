@@ -5,9 +5,6 @@ import asyncio
 from unittest.mock import patch, MagicMock
 
 import pytest
-from aiokafka import AIOKafkaProducer, AIOKafkaClient
-from aiokafka.conn import AIOKafkaConnection
-from aiokafka.producer.sender import Sender
 
 from kafka_events.tests.helpers.producer_helper import create_and_initialize_producer
 
