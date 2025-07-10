@@ -26,7 +26,7 @@ class TestProducer:
     Test suite
     """
 
-    @patch("kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    @patch("managers.kafka._producer.AIOKafkaProducer")
     async def test_producer_raises_exception_on_timeout_on_initialization(
         self, mock_producer: MagicMock
     ) -> None:
@@ -39,7 +39,7 @@ class TestProducer:
         with pytest.raises(asyncio.TimeoutError):
             await create_and_initialize_producer("localhost:9092")
 
-    @patch("kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    @patch("managers.kafka._producer.AIOKafkaProducer")
     async def test_producer_raises_exception_on_timeout_on_send(
         self, mock_producer: MagicMock
     ) -> None:
@@ -55,7 +55,7 @@ class TestProducer:
         with pytest.raises(asyncio.TimeoutError):
             await producer.send_data(json.dumps("Test").encode())
 
-    @patch("kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    @patch("managers.kafka._producer.AIOKafkaProducer")
     async def test_producer_accurately_cancels_methods(
         self, mock_producer: MagicMock
     ) -> None:
