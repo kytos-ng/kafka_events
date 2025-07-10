@@ -7,7 +7,7 @@ from aiokafka import AIOKafkaClient, AIOKafkaProducer
 from aiokafka.conn import AIOKafkaConnection
 from aiokafka.producer.sender import Sender
 
-from kafka_events.settings import KAFKA_TIMELIMIT
+from settings import KAFKA_TIMELIMIT
 
 
 class Producer:

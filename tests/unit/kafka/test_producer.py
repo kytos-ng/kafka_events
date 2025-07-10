@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from kafka_events.tests.helpers.producer_helper import create_and_initialize_producer
+from tests.helpers.producer_helper import create_and_initialize_producer
 
 
 async def simulate_long_timeout(*_: any) -> None:

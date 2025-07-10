@@ -6,10 +6,10 @@ from aiokafka.errors import KafkaError
 
 from kytos.core import log
 
-from kafka_events.managers.kafka._producer import Producer
-from kafka_events.managers.kafka._serializer import JSONSerializer
-from kafka_events.managers.kafka.interface import KafkaManager
-from kafka_events.settings import (
+from managers.kafka._producer import Producer
+from managers.kafka._serializer import JSONSerializer
+from managers.kafka.interface import KafkaManager
+from settings import (
     ACKS,
     BATCH_SIZE,
     BOOTSTRAP_SERVERS,
