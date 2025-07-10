@@ -1,7 +1,7 @@
 """ An abstract base class used for abstracting the contents of the Kafka domain away from main """
 
-from asyncio import AbstractEventLoop
 from abc import ABC, abstractmethod
+from asyncio import AbstractEventLoop
 
 
 class KafkaManager(ABC):

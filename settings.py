@@ -40,10 +40,3 @@ MAX_REQUEST_SIZE = 1024 * 1024 * 5
 # Kafka Time Limit: (float | int) The amount of time (in seconds) that any connection to kafka must
 # complete before.
 KAFKA_TIMELIMIT = 5
-
-# Producer Coroutine Names: (Dict[str, str]) The names given to coroutines so the handler can
-# accurately cancel coroutines created by the producer.
-PRODUCER_COROUTINE_NAMES = {
-    "send": "kafka_events.send",
-    "initialize": "kafka_events.initialize",
-}

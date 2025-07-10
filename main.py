@@ -2,10 +2,11 @@
 
 import asyncio
 from asyncio import AbstractEventLoop
-from kytos.core import KytosNApp, log, KytosEvent
+
+from kytos.core import KytosEvent, KytosNApp, log
 from kytos.core.helpers import alisten_to
-from managers.kafka.interface import KafkaManager
 from managers.kafka.handler import KafkaDomainManager
+from managers.kafka.interface import KafkaManager
 
 
 class Main(KytosNApp):

@@ -1,19 +1,16 @@
 """ The implementation class for KafkaManager, the public interface used by main. """
 
 import asyncio
-from kafka_events.managers.kafka.interface import KafkaManager
+
+from aiokafka.errors import KafkaError
+
 from kafka_events.managers.kafka._producer import Producer
 from kafka_events.managers.kafka._serializer import JSONSerializer
-from kafka_events.settings import (
-    BOOTSTRAP_SERVERS,
-    ACKS,
-    ENABLE_ITEMPOTENCE,
-    TOPIC_NAME,
-    BATCH_SIZE,
-    LINGER_MS,
-    MAX_REQUEST_SIZE,
-    PRODUCER_COROUTINE_NAMES,
-)
+from kafka_events.managers.kafka.interface import KafkaManager
+from kafka_events.settings import (ACKS, BATCH_SIZE, BOOTSTRAP_SERVERS,
+                                   ENABLE_ITEMPOTENCE, LINGER_MS,
+                                   MAX_REQUEST_SIZE, TOPIC_NAME)
+from kytos.core import log
 
 
 class KafkaDomainManager(KafkaManager):
@@ -48,15 +45,25 @@ class KafkaDomainManager(KafkaManager):
         if not self._producer.is_ready():
             await self._producer.initialize_producer()
 
-        await self._producer.send_data(
-            await self._serializer.serialize_and_encode(event, message)
-        )
+        try:
+            await self._producer.send_data(
+                await self._serializer.serialize_and_encode(event, message)
+            )
+        except asyncio.TimeoutError:
+            log.error("Producer tried publishing data but timed out.")
+        except KafkaError as e:
+            log.error(f"Publishing to Kafka failed: {e}")
 
     async def setup(self) -> None:
         """
         Sets up the producer by awaiting its setup routine (Necessary for AIOKafka)
         """
-        await self._producer.initialize_producer()
+        try:
+            await self._producer.initialize_producer()
+        except asyncio.TimeoutError:
+            log.error("Producer initialization sequence timed out.")
+        except KafkaError as e:
+            log.error(f"Kafka producer initialization sequence failed: {e}")
 
     def shutdown(self, loop: asyncio.AbstractEventLoop) -> None:
         """
@@ -68,8 +75,20 @@ class KafkaDomainManager(KafkaManager):
         before this occurs, the producer's routine cannot be awaited. Thus, we need to cancel
         all messages manually
         """
-        coroutine_names = set(PRODUCER_COROUTINE_NAMES.values())
 
-        for task in asyncio.all_tasks(loop):
-            if task.get_name() in coroutine_names:
-                task.cancel()
+        def log_cancelled_exception(task: asyncio.Task) -> None:
+            """
+            If a cancelled exception occurs, log a warning, not an exception.
+            """
+            try:
+                task.result()
+            except asyncio.CancelledError:
+                log.warning(
+                    f"Task {task.get_coro().__name__} was cancelled during shutdown."
+                )
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                log.error(
+                    f"Task {task.get_coro().__name__} raised an unexpected exception: {e}"
+                )
+
+        self._producer.sync_close(loop, callback=log_cancelled_exception)

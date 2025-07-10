@@ -125,23 +125,6 @@ class TestCoverage(Test):
             sys.exit(-1)
 
 
-class TestIntegration(Test):
-    """Run all integration tests"""
-
-    description = "run integration tests"
-
-    def run(self):
-        """Run tests quietly and display coverage report."""
-        cmd = "python3 -m pytest ./tests/integration/"
-        cmd += f" {self.get_args()}"
-        try:
-            check_call(cmd, shell=True)
-        except CalledProcessError as exc:
-            print(exc)
-            print("Integration tests failed. Fix the errors above and try again.")
-            sys.exit(-1)
-
-
 class Linter(SimpleCommand):
     """Code linters."""
 
@@ -277,7 +260,6 @@ setup(
     cmdclass={
         "clean": Cleaner,
         "coverage": TestCoverage,
-        "integration": TestIntegration,
         "develop": DevelopMode,
         "install": InstallMode,
         "lint": Linter,
