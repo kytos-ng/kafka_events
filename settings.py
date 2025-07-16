@@ -1,7 +1,10 @@
 """Module with the Constants used in the kafka_events."""
 
+import os
+
+
 # Bootstrap Server: (str) Location of the Kafka server
-BOOTSTRAP_SERVERS = "localhost:9092"
+BOOTSTRAP_SERVERS = os.environ.get("KAFKA_HOST_ADDR", "localhost:9092")
 
 # Acknowledgements: (str | int) A setting that sets the acknowledgement of messages to Kafka.
 # Available options are 0, 1 and "all"
