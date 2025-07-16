@@ -95,16 +95,18 @@ class Cleaner(SimpleCommand):
 class Test(TestCommand):
     """Run all tests."""
 
-    # Set PYTHONPATH for use in Scrutinizer
-    os.environ["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
-
     description = "run tests and display results"
 
     def run(self):
         """Run tests."""
+
+        # Set PYTHONPATH for use in Scrutinizer
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
+
         cmd = f"python3 -m pytest tests/ {self.get_args()}"
         try:
-            check_call(cmd, shell=True)
+            check_call(cmd, shell=True, env=env)
         except CalledProcessError as exc:
             print(exc)
             print("Unit tests failed. Fix the errors above and try again.")
@@ -114,17 +116,19 @@ class Test(TestCommand):
 class TestCoverage(Test):
     """Display test coverage."""
 
-    # Set PYTHONPATH for use in Scrutinizer
-    os.environ["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
-
     description = "run tests and display code coverage"
 
     def run(self):
         """Run tests quietly and display coverage report."""
+
+        # Set PYTHONPATH for use in Scrutinizer
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
+
         cmd = "python3 -m pytest ./tests/unit --cov=. tests/ --cov-report term-missing"
         cmd += f" {self.get_args()}"
         try:
-            check_call(cmd, shell=True)
+            check_call(cmd, shell=True, env=env)
         except CalledProcessError as exc:
             print(exc)
             print("Coverage tests failed. Fix the errors above and try again.")
@@ -141,8 +145,13 @@ class Linter(SimpleCommand):
 
     def run(self):
         """Run yala."""
+
+        # Set PYTHONPATH for use in Scrutinizer
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
+
         print("Yala is running. It may take several seconds...")
-        check_call("yala *.py managers tests", shell=True)
+        check_call("yala *.py managers tests", shell=True, env=env)
 
 
 class KytosInstall:
