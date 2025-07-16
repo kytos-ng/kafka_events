@@ -2,7 +2,7 @@
 
 import asyncio
 
-from kafka_events.main import Main
+from main import Main
 
 
 class TestMain:

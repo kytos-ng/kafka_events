@@ -5,11 +5,10 @@ import asyncio
 from aiokafka.errors import KafkaError
 
 from kytos.core import log
-
-from kafka_events.managers.kafka._producer import Producer
-from kafka_events.managers.kafka._serializer import JSONSerializer
-from kafka_events.managers.kafka.interface import KafkaManager
-from kafka_events.settings import (
+from napps.kytos.kafka_events.managers.kafka._producer import Producer
+from napps.kytos.kafka_events.managers.kafka._serializer import JSONSerializer
+from napps.kytos.kafka_events.managers.kafka.interface import KafkaManager
+from napps.kytos.kafka_events.settings import (
     ACKS,
     BATCH_SIZE,
     BOOTSTRAP_SERVERS,

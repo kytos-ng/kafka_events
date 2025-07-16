@@ -99,14 +99,9 @@ class Test(TestCommand):
 
     def run(self):
         """Run tests."""
-
-        # Set PYTHONPATH for use in Scrutinizer
-        env = os.environ.copy()
-        env["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
-
         cmd = f"python3 -m pytest tests/ {self.get_args()}"
         try:
-            check_call(cmd, shell=True, env=env)
+            check_call(cmd, shell=True)
         except CalledProcessError as exc:
             print(exc)
             print("Unit tests failed. Fix the errors above and try again.")
@@ -120,15 +115,10 @@ class TestCoverage(Test):
 
     def run(self):
         """Run tests quietly and display coverage report."""
-
-        # Set PYTHONPATH for use in Scrutinizer
-        env = os.environ.copy()
-        env["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
-
         cmd = "python3 -m pytest ./tests/unit --cov=. tests/ --cov-report term-missing"
         cmd += f" {self.get_args()}"
         try:
-            check_call(cmd, shell=True, env=env)
+            check_call(cmd, shell=True)
         except CalledProcessError as exc:
             print(exc)
             print("Coverage tests failed. Fix the errors above and try again.")
@@ -138,20 +128,12 @@ class TestCoverage(Test):
 class Linter(SimpleCommand):
     """Code linters."""
 
-    # Set PYTHONPATH for use in Scrutinizer
-    os.environ["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
-
     description = "lint Python source code"
 
     def run(self):
         """Run yala."""
-
-        # Set PYTHONPATH for use in Scrutinizer
-        env = os.environ.copy()
-        env["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
-
         print("Yala is running. It may take several seconds...")
-        check_call("yala *.py managers tests", shell=True, env=env)
+        check_call("yala *.py managers tests", shell=True)
 
 
 class KytosInstall:
