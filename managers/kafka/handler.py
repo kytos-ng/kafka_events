@@ -48,7 +48,7 @@ class KafkaDomainManager(KafkaManager):
         """
         try:
             await self._producer.send_data(
-                await self._serializer.serialize_and_encode(event, message)
+                self._serializer.serialize_and_encode(event, message)
             )
         except asyncio.TimeoutError:
             log.error("Producer tried publishing data but timed out.")
