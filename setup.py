@@ -95,6 +95,9 @@ class Cleaner(SimpleCommand):
 class Test(TestCommand):
     """Run all tests."""
 
+    # Set PYTHONPATH for use in Scrutinizer
+    os.environ["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
+
     description = "run tests and display results"
 
     def run(self):
@@ -110,6 +113,9 @@ class Test(TestCommand):
 
 class TestCoverage(Test):
     """Display test coverage."""
+
+    # Set PYTHONPATH for use in Scrutinizer
+    os.environ["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
 
     description = "run tests and display code coverage"
 
@@ -127,6 +133,9 @@ class TestCoverage(Test):
 
 class Linter(SimpleCommand):
     """Code linters."""
+
+    # Set PYTHONPATH for use in Scrutinizer
+    os.environ["PYTHONPATH"] = os.path.dirname(os.path.abspath(__file__))
 
     description = "lint Python source code"
 
