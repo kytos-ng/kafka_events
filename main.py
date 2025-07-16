@@ -45,6 +45,4 @@ class Main(KytosNApp):
 
         Accepts every propagated event (uses .* regex syntax)
         """
-        self._async_loop.create_task(
-            self._kafka_handler.send(event.name, event.content)
-        )
+        await self._kafka_handler.send(event.name, event.content)

@@ -38,12 +38,18 @@ class Producer:
             max_request_size=max_request_size,
         )
         self._topic: str = topic_name
+        self._initialized: bool = False
+        self._lock = asyncio.Lock()
 
     async def initialize_producer(self) -> None:
         """
         Initialize the producer using AIOKafkaProducer's built in setup method
         """
-        await asyncio.wait_for(self._producer.start(), KAFKA_TIMELIMIT)
+        async with self._lock:
+            if self._initialized:
+                return
+            await asyncio.wait_for(self._producer.start(), KAFKA_TIMELIMIT)
+            self._initialized = True
 
     async def send_data(self, encoded_data: bytes) -> None:
         """
@@ -51,6 +57,11 @@ class Producer:
 
         The incoming data must already have been serialized and encoded.
         """
+        if self.is_closed():
+            return
+        if not self.is_ready():
+            await self.initialize_producer()
+
         await asyncio.wait_for(
             self._producer.send(self._topic, encoded_data), KAFKA_TIMELIMIT
         )
@@ -84,7 +95,10 @@ class Producer:
         """
         Checks if the producer is ready by using its _closed component
         """
-        return getattr(self._producer, "_closed", None) is False
+        return (
+            getattr(self._producer, "_closed", None) is False
+            and self._initialized is True
+        )
 
     def is_closed(self) -> bool:
         """

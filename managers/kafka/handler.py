@@ -46,11 +46,6 @@ class KafkaDomainManager(KafkaManager):
         - Serializes the message into JSON
         - Awaits the producer to enqueue the message
         """
-        if self._producer.is_closed():
-            return
-        if not self._producer.is_ready():
-            await self._producer.initialize_producer()
-
         try:
             await self._producer.send_data(
                 await self._serializer.serialize_and_encode(event, message)
