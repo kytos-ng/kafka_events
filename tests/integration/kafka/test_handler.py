@@ -5,8 +5,8 @@ import asyncio
 from aiokafka import AIOKafkaConsumer
 
 from kytos.core import KytosEvent
-from managers.kafka.handler import KafkaDomainManager
-from settings import TOPIC_NAME, KAFKA_TIMELIMIT
+from kafka_events.managers.kafka.handler import KafkaDomainManager
+from kafka_events.settings import TOPIC_NAME, KAFKA_TIMELIMIT
 
 
 class TestHandler:

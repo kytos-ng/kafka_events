@@ -1,6 +1,6 @@
 """ Testing suite for the JSONSerializer class """
 
-from managers.kafka._serializer import JSONSerializer
+from kafka_events.managers.kafka._serializer import JSONSerializer
 
 
 class MockClass:  # pylint:disable=too-few-public-methods

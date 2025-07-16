@@ -5,9 +5,9 @@ import json
 
 from aiokafka import AIOKafkaConsumer
 
-from managers.kafka._producer import Producer
-from tests.helpers.producer_helper import create_and_initialize_producer
-from settings import TOPIC_NAME
+from kafka_events.managers.kafka._producer import Producer
+from kafka_events.tests.helpers.producer_helper import create_and_initialize_producer
+from kafka_events.settings import TOPIC_NAME
 
 
 class TestProducer:

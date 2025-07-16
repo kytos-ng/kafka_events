@@ -1,7 +1,7 @@
 """Helper methods when doing tests"""
 
-from managers.kafka._producer import Producer
-from settings import (
+from kafka_events.managers.kafka._producer import Producer
+from kafka_events.settings import (
     ACKS,
     ENABLE_ITEMPOTENCE,
     TOPIC_NAME,
