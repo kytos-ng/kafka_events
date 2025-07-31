@@ -4,10 +4,9 @@ import asyncio
 
 from aiokafka.errors import KafkaError
 
-from kytos.core import log
+from kytos.core import log, KytosEvent
 from napps.kytos.kafka_events.managers.kafka._producer import Producer
 from napps.kytos.kafka_events.managers.kafka._serializer import JSONSerializer
-from napps.kytos.kafka_events.managers.kafka.interface import KafkaManager
 from napps.kytos.kafka_events.settings import (
     ACKS,
     BATCH_SIZE,
@@ -19,7 +18,7 @@ from napps.kytos.kafka_events.settings import (
 )
 
 
-class KafkaDomainManager(KafkaManager):
+class KafkaManager:
     """Acts like an orchestrator for internal components."""
 
     def __init__(self):
@@ -37,7 +36,7 @@ class KafkaDomainManager(KafkaManager):
         )
         self._serializer = JSONSerializer()
 
-    async def send(self, event: str, message: any) -> None:
+    async def send(self, event: KytosEvent) -> None:
         """
         Send data to Kafka. Uses the following flow:
 
@@ -46,12 +45,18 @@ class KafkaDomainManager(KafkaManager):
         - Serializes the message into JSON
         - Awaits the producer to enqueue the message
         """
+        event_name: str = event.name
+        event_message: str = event.message
+
         try:
             await self._producer.send_data(
-                self._serializer.serialize_and_encode(event, message)
+                self._serializer.serialize_and_encode(event_name, event_message)
             )
-        except asyncio.TimeoutError:
-            log.error("Producer tried publishing data but timed out.")
+        except asyncio.TimeoutError as e:
+            log.error(
+                f"Producer tried publishing {event_name} [id: {event.id}, \
+                      timestamp: {event.timestamp}] but timed out: {e}"
+            )
         except KafkaError as e:
             log.error(f"Publishing to Kafka failed: {e}")
 

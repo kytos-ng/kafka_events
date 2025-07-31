@@ -68,8 +68,8 @@ class TestProducer:
 
         producer = await create_and_initialize_producer("localhost:9092")
 
-        initialize: asyncio.Future = asyncio.create_task(producer.initialize_producer())
-        send_data: asyncio.Future = asyncio.create_task(
+        initialize: asyncio.Task = asyncio.create_task(producer.initialize_producer())
+        send_data: asyncio.Task = asyncio.create_task(
             producer.send_data(json.dumps("test").encode())
         )
 

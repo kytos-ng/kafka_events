@@ -3,10 +3,9 @@
 import asyncio
 from asyncio import AbstractEventLoop
 
+from napps.kytos.kafka_events.managers.kafka.handler import KafkaManager
 from kytos.core import KytosEvent, KytosNApp, log
 from kytos.core.helpers import alisten_to
-from napps.kytos.kafka_events.managers.kafka.handler import KafkaDomainManager
-from napps.kytos.kafka_events.managers.kafka.interface import KafkaManager
 
 
 class Main(KytosNApp):
@@ -20,10 +19,12 @@ class Main(KytosNApp):
         """
         log.info("SETUP Kytos/kafka_events")
 
-        self._kafka_handler: KafkaManager = KafkaDomainManager()
+        self._tasks: list[asyncio.Task] = []
+
+        self._kafka_handler: KafkaManager = KafkaManager()
         self._async_loop: AbstractEventLoop = asyncio.get_running_loop()
 
-        self._async_loop.create_task(self._kafka_handler.setup())
+        self._tasks.append(self._async_loop.create_task(self._kafka_handler.setup()))
 
     def execute(self):
         """
@@ -45,4 +46,4 @@ class Main(KytosNApp):
 
         Accepts every propagated event (uses .* regex syntax)
         """
-        await self._kafka_handler.send(event.name, event.content)
+        await self._kafka_handler.send(event)

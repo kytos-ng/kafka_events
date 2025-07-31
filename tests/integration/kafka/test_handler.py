@@ -5,7 +5,7 @@ import asyncio
 from aiokafka import AIOKafkaConsumer
 
 from kytos.core import KytosEvent
-from managers.kafka.handler import KafkaDomainManager
+from managers.kafka.handler import KafkaManager
 from settings import TOPIC_NAME, KAFKA_TIMELIMIT
 
 
@@ -16,7 +16,7 @@ class TestHandler:
         """
         Given an available broker, setup should succeed
         """
-        handler = KafkaDomainManager()
+        handler = KafkaManager()
         await handler.setup()
 
         assert handler._producer.is_ready()  # pylint:disable=protected-access
@@ -31,11 +31,11 @@ class TestHandler:
         consumer = AIOKafkaConsumer(TOPIC_NAME, bootstrap_servers="localhost:9092")
         await consumer.start()
 
-        handler = KafkaDomainManager()
+        handler = KafkaManager()
         await handler.setup()
 
         event = KytosEvent(name="Test", content={"Data": "Test"})
-        await handler.send(event.name, event.content)
+        await handler.send(event)
 
         assert await asyncio.wait_for(consumer.getone(), KAFKA_TIMELIMIT) is not None
         await consumer.stop()
@@ -44,15 +44,16 @@ class TestHandler:
         """
         If the producer has been closed, do not attempt to send data
         """
-        handler = KafkaDomainManager()
+        handler = KafkaManager()
 
         await handler.setup()
         await handler._producer.shutdown()  # pylint:disable=protected-access
+        assert handler._producer.is_closed()  # pylint:disable=protected-access
 
-        assert not handler._producer.is_closed()  # pylint:disable=protected-access
+        event = KytosEvent(name="Test", content=None)
 
         # Should immediately return. If it tries to send, an exception would be thrown.
-        handler.send("Test", None)
+        await handler.send(event)
 
     async def test_send_will_initialize_if_producer_is_not_ready(self) -> None:
         """
@@ -64,11 +65,14 @@ class TestHandler:
         consumer = AIOKafkaConsumer(TOPIC_NAME, bootstrap_servers="localhost:9092")
         await consumer.start()
 
-        handler = KafkaDomainManager()
+        handler = KafkaManager()
+        await handler.setup()
 
-        await handler.send("Test", {"Test": "Test"})
+        event = KytosEvent(name="Test", content={"Test": "Test"})
 
-        assert consumer.getone() is not None
+        await handler.send(event)
+
+        assert await consumer.getone() is not None
         await consumer.stop()
 
     async def test_shutdown_only_cancels_valid_data(self) -> None:
@@ -96,7 +100,9 @@ class TestHandler:
             """SHOULD NOT BE CANCELLED"""
             await asyncio.sleep(60)
 
-        handler = KafkaDomainManager()
+        handler = KafkaManager()
+        await handler.setup()
+
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
 
         enqueued_tasks: list[asyncio.Task] = [
@@ -109,8 +115,8 @@ class TestHandler:
 
         handler.shutdown(loop)
 
-        assert enqueued_tasks[0].cancelling == 1
-        assert enqueued_tasks[1].cancelling == 0
-        assert enqueued_tasks[2].cancelling == 1
-        assert enqueued_tasks[3].cancelling == 1
-        assert enqueued_tasks[4].cancelling == 0
+        assert enqueued_tasks[0].cancelling() == 1
+        assert enqueued_tasks[1].cancelling() == 0
+        assert enqueued_tasks[2].cancelling() == 1
+        assert enqueued_tasks[3].cancelling() == 1
+        assert enqueued_tasks[4].cancelling() == 0
