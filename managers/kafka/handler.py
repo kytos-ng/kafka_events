@@ -46,7 +46,7 @@ class KafkaManager:
         - Awaits the producer to enqueue the message
         """
         event_name: str = event.name
-        event_message: str = event.message
+        event_message: str = event.content
 
         try:
             await self._producer.send_data(

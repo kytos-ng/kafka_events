@@ -43,3 +43,17 @@ MAX_REQUEST_SIZE = 1024 * 1024 * 5
 # Kafka Time Limit: (float | int) The amount of time (in seconds) that any connection to kafka must
 # complete before.
 KAFKA_TIMELIMIT = 5
+
+# FILTERING
+
+# Allowed namespaces: list[str], The names of all namespaces (in regex format) that are allowed
+ALLOWED_NAMESPACES = (r"kytos[./](.*)",)
+
+# Blocked patterns: list[str], The patterns we want to explicitly block. This takes precendence
+# over ALLOWED_NAMESPACES.
+BLOCKED_PATTERNS = (
+    "kytos/of_core.v0x04.messages.*",
+    "kytos/flow_manager.messages.out.*",
+    "kytos/of_lldp.messages.out.*",
+    "kytos/core.openflow.raw.*"
+)
