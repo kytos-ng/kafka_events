@@ -4,7 +4,7 @@ import re
 import asyncio
 from asyncio import AbstractEventLoop
 
-from napps.kytos.kafka_events.settings import ALLOWED_NAMESPACES, BLOCKED_PATTERNS
+from napps.kytos.kafka_events.settings import BLOCKED_PATTERNS
 from napps.kytos.kafka_events.managers.kafka.handler import KafkaManager
 from kytos.core import KytosEvent, KytosNApp, log
 from kytos.core.helpers import alisten_to
@@ -41,7 +41,7 @@ class Main(KytosNApp):
         log.info("SHUTDOWN kafka_events/Kytos")
         self._kafka_handler.shutdown(self._async_loop)
 
-    @alisten_to(ALLOWED_NAMESPACES)
+    @alisten_to(".*")
     async def handle_events(self, event: KytosEvent):
         """
         Handle and process KytosEvents

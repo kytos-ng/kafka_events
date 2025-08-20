@@ -53,10 +53,6 @@ class JSONObjectEncoder(JSONEncoder):
                 return o
             if isinstance(o, set):
                 return list(o)
-            if type(o).__str__ is not object.__str__:
-                return str(o)
-            if type(o).__repr__ is not object.__repr__:
-                return repr(o)
             return dict(vars(o).items())
         except (AttributeError, TypeError):
             return str(o)
