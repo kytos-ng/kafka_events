@@ -1,6 +1,6 @@
 services:
   broker1:
-    image: apache/kafka:4.0.1-rc0
+    image: apache/kafka:4.0.0
     container_name: broker1
     restart: unless-stopped
     ports:
@@ -19,7 +19,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
   broker2:
-    image: apache/kafka:4.0.1-rc0
+    image: apache/kafka:4.0.0
     container_name: broker2
     restart: unless-stopped
     ports:
@@ -38,7 +38,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
   broker3:
-    image: apache/kafka:4.0.1-rc0
+    image: apache/kafka:4.0.0
     container_name: broker3
     restart: unless-stopped
     ports:
