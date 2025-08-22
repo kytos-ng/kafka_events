@@ -64,6 +64,8 @@ class KafkaManager:
         """
         Sets up the producer by awaiting its setup routine (Necessary for AIOKafka)
         """
+        log.info("Initializing producer...")
+
         try:
             await self._producer.initialize_producer()
         except asyncio.TimeoutError:

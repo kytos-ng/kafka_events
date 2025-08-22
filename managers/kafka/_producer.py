@@ -7,6 +7,7 @@ from aiokafka import AIOKafkaClient, AIOKafkaProducer
 from aiokafka.conn import AIOKafkaConnection
 from aiokafka.producer.sender import Sender
 
+from kytos.core import log
 from napps.kytos.kafka_events.settings import KAFKA_TIMELIMIT
 
 
@@ -50,6 +51,8 @@ class Producer:
                 return
             await asyncio.wait_for(self._producer.start(), KAFKA_TIMELIMIT)
             self._initialized = True
+
+        log.info("Successfully connected to Kafka server.")
 
     async def send_data(self, encoded_data: bytes) -> None:
         """
