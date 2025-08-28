@@ -26,9 +26,13 @@ class JSONSerializer:
         Serializes data into JSON format. Uses JSONObjectEncoder for object serialization.
         """
         try:
-            return json.dumps({"event": event, "message": data}, cls=self._encoder_class)
+            return json.dumps(
+                {"event": event, "message": data}, cls=self._encoder_class
+            )
         except ValueError:
-            return json.dumps({"event": event, "message": self._encoder_class().default(data)})
+            return json.dumps(
+                {"event": event, "message": self._encoder_class().default(data)}
+            )
 
     def encode(self, serialized_data: str) -> bytes:
         """
@@ -41,6 +45,7 @@ class JSONObjectEncoder(JSONEncoder):
     """
     A custom encoder class to convert class objects into JSON
     """
+
     def default(self, o):
         """
         Args:

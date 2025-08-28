@@ -24,7 +24,9 @@ class Main(KytosNApp):
         self._tasks: list[asyncio.Task] = []
         self._kafka_handler: KafkaManager = KafkaManager()
         self._async_loop: AbstractEventLoop = asyncio.get_running_loop()
-        self._blocked: list[re.Pattern] = [re.compile(pattern) for pattern in BLOCKED_PATTERNS]
+        self._blocked: list[re.Pattern] = [
+            re.compile(pattern) for pattern in BLOCKED_PATTERNS
+        ]
 
         self._tasks.append(self._async_loop.create_task(self._kafka_handler.setup()))
 

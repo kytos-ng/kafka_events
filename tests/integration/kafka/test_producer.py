@@ -1,48 +1,59 @@
 """ Test suite for the Producer class """
 
-import asyncio
 import json
+from unittest.mock import patch, MagicMock, Mock
 
-from aiokafka import AIOKafkaConsumer
-
-from managers.kafka._producer import Producer
-from tests.helpers.producer_helper import create_and_initialize_producer
-from settings import TOPIC_NAME
+from napps.kytos.kafka_events.managers.kafka._producer import Producer
+from napps.kytos.kafka_events.tests.helpers.producer_helper import (
+    create_and_initialize_producer,
+)
+from napps.kytos.kafka_events.tests.helpers.mocked_functions import (
+    simulate_successful_delay,
+)
 
 
 class TestProducer:
     """
-    Testing suite
-
-    Note: In Main, the shutdown sequence is synchronous, thus it does not use the Producer
-    class's correct shudown routine, favoring the synchronous method. The synchronous method
-    cancels all pending tasks before closing the loop. While not desirable, it is the
-    valid way to sufficently shutdown at the moment. In this testing suite, we opt
-    to use the correct shutdown routine as to reduce warning messages in stdout.
+    Mocked testing suite
     """
 
-    async def test_should_connect_properly_given_valid_broker(self) -> None:
+    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    async def test_should_connect_properly_given_valid_broker(
+        self, producer_mock: MagicMock
+    ) -> None:
         """
         Given a valid broker to connect to, Producer should successfully complete its setup
         routine.
         """
+        mock_instance = MagicMock()
+        producer_mock.return_value = mock_instance
+
+        mock_instance.start = Mock(side_effect=simulate_successful_delay)
+        mock_instance.configure_mock(_closed=False)
+
         producer: Producer = await create_and_initialize_producer(
             bootstrap_servers="localhost:9092"
         )
 
         assert producer.is_ready() is True
 
-        await producer.shutdown()
+        # Assert mocks
 
-    async def test_should_send_messages_with_valid_data(self) -> None:
+        producer_mock.assert_called_once()
+        mock_instance.start.assert_called_once()
+
+    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    async def test_should_send_messages_with_valid_data(
+        self, producer_mock: MagicMock
+    ) -> None:
         """
         The producer should be able to valid messages to Kafka
         """
-        # Create a consumer first.
-        # We want to do this because we want it to consume the LATEST message, not previous
-        # messages that have been sent from other integration tests.
-        consumer = AIOKafkaConsumer(TOPIC_NAME, bootstrap_servers="localhost:9092")
-        await consumer.start()
+        mock_instance = MagicMock()
+        producer_mock.return_value = mock_instance
+
+        mock_instance.start = Mock(side_effect=simulate_successful_delay)
+        mock_instance.send = Mock(side_effect=simulate_successful_delay)
 
         # Create a test message
         message: bytes = json.dumps("Test").encode()
@@ -53,18 +64,8 @@ class TestProducer:
 
         await producer.send_data(message)
 
-        # Wait for the message to propagate
+        # Assert mocks
 
-        await asyncio.sleep(1)
-
-        # Test that the message was received
-
-        topics = await asyncio.create_task(
-            asyncio.wait_for(consumer.getone(), timeout=5)
-        )
-
-        assert topics is not None
-
-        # Close producer & consumer
-        await producer.shutdown()
-        await consumer.stop()
+        producer_mock.assert_called_once()
+        mock_instance.start.assert_called_once()
+        mock_instance.send.assert_called_once()

@@ -6,7 +6,9 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from tests.helpers.producer_helper import create_and_initialize_producer
+from napps.kytos.kafka_events.tests.helpers.producer_helper import (
+    create_and_initialize_producer,
+)
 
 
 async def simulate_long_timeout(*_: any) -> None:
@@ -26,7 +28,7 @@ class TestProducer:
     Test suite
     """
 
-    @patch("managers.kafka._producer.AIOKafkaProducer")
+    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
     async def test_producer_raises_exception_on_timeout_on_initialization(
         self, mock_producer: MagicMock
     ) -> None:
@@ -39,7 +41,7 @@ class TestProducer:
         with pytest.raises(asyncio.TimeoutError):
             await create_and_initialize_producer("localhost:9092")
 
-    @patch("managers.kafka._producer.AIOKafkaProducer")
+    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
     async def test_producer_raises_exception_on_timeout_on_send(
         self, mock_producer: MagicMock
     ) -> None:
@@ -55,7 +57,7 @@ class TestProducer:
         with pytest.raises(asyncio.TimeoutError):
             await producer.send_data(json.dumps("Test").encode())
 
-    @patch("managers.kafka._producer.AIOKafkaProducer")
+    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
     async def test_producer_accurately_cancels_methods(
         self, mock_producer: MagicMock
     ) -> None:

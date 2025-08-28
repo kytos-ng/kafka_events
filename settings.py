@@ -4,7 +4,7 @@ import os
 
 
 # Bootstrap Server: (str) Location of the Kafka server
-BOOTSTRAP_SERVERS = os.environ.get("KAFKA_HOST_ADDR", "localhost:9092")
+BOOTSTRAP_SERVERS = os.environ.get("KAFKA_HOST_ADDR", "localhost:29092")
 
 # Acknowledgements: (str | int) A setting that sets the acknowledgement of messages to Kafka.
 # Available options are 0, 1 and "all"
@@ -52,5 +52,5 @@ BLOCKED_PATTERNS = (
     "kytos/of_core.v0x04.messages.*",
     "kytos/flow_manager.messages.out.*",
     "kytos/of_lldp.messages.out.*",
-    "kytos/core.openflow.raw.*"
+    "kytos/core.openflow.raw.*",
 )

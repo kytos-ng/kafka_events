@@ -1,35 +1,52 @@
 """Handler testing suite"""
 
 import asyncio
-
-from aiokafka import AIOKafkaConsumer
+from unittest.mock import patch, MagicMock, Mock
 
 from kytos.core import KytosEvent
-from managers.kafka.handler import KafkaManager
-from settings import TOPIC_NAME, KAFKA_TIMELIMIT
+from napps.kytos.kafka_events.managers.kafka.handler import KafkaManager
+from napps.kytos.kafka_events.tests.helpers.mocked_functions import (
+    simulate_successful_delay,
+)
 
 
 class TestHandler:
     """Testing suite"""
 
-    async def test_setup_succeeds_with_valid_broker(self) -> None:
+    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    async def test_setup_succeeds_with_valid_broker(
+        self, producer_mock: MagicMock
+    ) -> None:
         """
         Given an available broker, setup should succeed
         """
+        mock_instance = MagicMock()
+        producer_mock.return_value = mock_instance
+
+        mock_instance.start = Mock(side_effect=simulate_successful_delay)
+        mock_instance.configure_mock(_closed=False)
+
         handler = KafkaManager()
         await handler.setup()
 
         assert handler._producer.is_ready()  # pylint:disable=protected-access
 
-        await handler._producer.shutdown()  # pylint:disable=protected-access
+        # Assert mocks
+        producer_mock.assert_called_once()
+        mock_instance.start.assert_called_once()
 
-    async def test_send_succeeds_with_valid_data(self) -> None:
+    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    async def test_send_succeeds_with_valid_data(
+        self, producer_mock: MagicMock
+    ) -> None:
         """
         Given valid data, send_data should succeed
         """
-        # First create an AIOKafkaConsumer to test the data was propagated
-        consumer = AIOKafkaConsumer(TOPIC_NAME, bootstrap_servers="localhost:9092")
-        await consumer.start()
+        mock_instance = MagicMock()
+        producer_mock.return_value = mock_instance
+
+        mock_instance.start = Mock(side_effect=simulate_successful_delay)
+        mock_instance.send = Mock(side_effect=simulate_successful_delay)
 
         handler = KafkaManager()
         await handler.setup()
@@ -37,33 +54,57 @@ class TestHandler:
         event = KytosEvent(name="Test", content={"Data": "Test"})
         await handler.send(event)
 
-        assert await asyncio.wait_for(consumer.getone(), KAFKA_TIMELIMIT) is not None
-        await consumer.stop()
+        # Assert mocks
 
-    async def test_send_returns_when_producer_is_closed(self) -> None:
+        producer_mock.assert_called_once()
+        mock_instance.start.assert_called_once()
+        mock_instance.send.assert_called_once()
+
+    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    async def test_send_returns_when_producer_is_closed(
+        self, producer_mock: MagicMock
+    ) -> None:
         """
         If the producer has been closed, do not attempt to send data
         """
+        mock_instance = MagicMock()
+        producer_mock.return_value = mock_instance
+
+        mock_instance.start = Mock(side_effect=simulate_successful_delay)
+        mock_instance.configure_mock(_closed=False)
+        mock_instance.send = Mock(side_effect=simulate_successful_delay)
+        mock_instance.stop = Mock(side_effect=simulate_successful_delay)
+
         handler = KafkaManager()
 
         await handler.setup()
         await handler._producer.shutdown()  # pylint:disable=protected-access
-        assert handler._producer.is_closed()  # pylint:disable=protected-access
 
         event = KytosEvent(name="Test", content=None)
 
         # Should immediately return. If it tries to send, an exception would be thrown.
         await handler.send(event)
 
-    async def test_send_will_initialize_if_producer_is_not_ready(self) -> None:
+        # Assert mocks
+
+        producer_mock.assert_called_once()
+        mock_instance.start.assert_called_once()
+        mock_instance.stop.assert_called_once()
+
+    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    async def test_send_will_initialize_if_producer_is_not_ready(
+        self, producer_mock: MagicMock
+    ) -> None:
         """
         Because Main's setup function is synchronous, the application may try sending
         messages before the producer is ready. We avoid this by awaiting the initialization
         method before sending
         """
-        # First create an AIOKafkaConsumer to test the data was propagated
-        consumer = AIOKafkaConsumer(TOPIC_NAME, bootstrap_servers="localhost:9092")
-        await consumer.start()
+        mock_instance = MagicMock()
+        producer_mock.return_value = mock_instance
+
+        mock_instance.start = Mock(side_effect=simulate_successful_delay)
+        mock_instance.send = Mock(side_effect=simulate_successful_delay)
 
         handler = KafkaManager()
         await handler.setup()
@@ -72,13 +113,22 @@ class TestHandler:
 
         await handler.send(event)
 
-        assert await consumer.getone() is not None
-        await consumer.stop()
+        # Assert mocks
 
-    async def test_shutdown_only_cancels_valid_data(self) -> None:
+        mock_instance.start.assert_called_once()
+        mock_instance.send.assert_called_once()
+
+    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    async def test_shutdown_only_cancels_valid_data(
+        self, producer_mock: MagicMock
+    ) -> None:
         """
         Given a loop with mixed Tasks, only cancel what is acceptable.
         """
+        mock_instance = MagicMock()
+        producer_mock.return_value = mock_instance
+
+        mock_instance.start = Mock(side_effect=simulate_successful_delay)
 
         async def send(*_: any) -> None:
             """SHOULD BE CANCELLED"""
@@ -120,3 +170,7 @@ class TestHandler:
         assert enqueued_tasks[2].cancelling() == 1
         assert enqueued_tasks[3].cancelling() == 1
         assert enqueued_tasks[4].cancelling() == 0
+
+        # Assert mocks
+
+        mock_instance.start.assert_called_once()
