@@ -7,6 +7,7 @@ from kytos.core import KytosEvent
 from napps.kytos.kafka_events.managers.kafka.handler import KafkaManager
 from napps.kytos.kafka_events.tests.helpers.mocked_functions import (
     simulate_successful_delay,
+    setup_mock_instance,
 )
 
 
@@ -20,9 +21,7 @@ class TestHandler:
         """
         Given an available broker, setup should succeed
         """
-        mock_instance = MagicMock()
-        producer_mock.return_value = mock_instance
-
+        mock_instance: MagicMock = setup_mock_instance(producer_mock)
         mock_instance.start = Mock(side_effect=simulate_successful_delay)
         mock_instance.configure_mock(_closed=False)
 
@@ -42,9 +41,7 @@ class TestHandler:
         """
         Given valid data, send_data should succeed
         """
-        mock_instance = MagicMock()
-        producer_mock.return_value = mock_instance
-
+        mock_instance: MagicMock = setup_mock_instance(producer_mock)
         mock_instance.start = Mock(side_effect=simulate_successful_delay)
         mock_instance.send = Mock(side_effect=simulate_successful_delay)
 
@@ -67,9 +64,7 @@ class TestHandler:
         """
         If the producer has been closed, do not attempt to send data
         """
-        mock_instance = MagicMock()
-        producer_mock.return_value = mock_instance
-
+        mock_instance: MagicMock = setup_mock_instance(producer_mock)
         mock_instance.start = Mock(side_effect=simulate_successful_delay)
         mock_instance.configure_mock(_closed=False)
         mock_instance.send = Mock(side_effect=simulate_successful_delay)
@@ -100,9 +95,7 @@ class TestHandler:
         messages before the producer is ready. We avoid this by awaiting the initialization
         method before sending
         """
-        mock_instance = MagicMock()
-        producer_mock.return_value = mock_instance
-
+        mock_instance: MagicMock = setup_mock_instance(producer_mock)
         mock_instance.start = Mock(side_effect=simulate_successful_delay)
         mock_instance.send = Mock(side_effect=simulate_successful_delay)
 
@@ -125,9 +118,7 @@ class TestHandler:
         """
         Given a loop with mixed Tasks, only cancel what is acceptable.
         """
-        mock_instance = MagicMock()
-        producer_mock.return_value = mock_instance
-
+        mock_instance: MagicMock = setup_mock_instance(producer_mock)
         mock_instance.start = Mock(side_effect=simulate_successful_delay)
 
         async def send(*_: any) -> None:
