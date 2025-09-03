@@ -1,7 +1,7 @@
 """Handler testing suite"""
 
 import asyncio
-from unittest.mock import patch, MagicMock, Mock
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from kytos.core import KytosEvent
 from napps.kytos.kafka_events.managers.kafka.handler import KafkaManager
@@ -21,8 +21,8 @@ class TestHandler:
         """
         Given an available broker, setup should succeed
         """
-        mock_instance: MagicMock = setup_mock_instance(producer_mock)
-        mock_instance.start = Mock(side_effect=simulate_successful_delay)
+        mock_instance: AsyncMock = setup_mock_instance(producer_mock)
+        mock_instance.start = AsyncMock(side_effect=simulate_successful_delay)
         mock_instance.configure_mock(_closed=False)
 
         handler = KafkaManager()
@@ -41,9 +41,9 @@ class TestHandler:
         """
         Given valid data, send_data should succeed
         """
-        mock_instance: MagicMock = setup_mock_instance(producer_mock)
-        mock_instance.start = Mock(side_effect=simulate_successful_delay)
-        mock_instance.send = Mock(side_effect=simulate_successful_delay)
+        mock_instance: AsyncMock = setup_mock_instance(producer_mock)
+        mock_instance.start = AsyncMock(side_effect=simulate_successful_delay)
+        mock_instance.send = AsyncMock(side_effect=simulate_successful_delay)
 
         handler = KafkaManager()
         await handler.setup()
@@ -64,11 +64,11 @@ class TestHandler:
         """
         If the producer has been closed, do not attempt to send data
         """
-        mock_instance: MagicMock = setup_mock_instance(producer_mock)
-        mock_instance.start = Mock(side_effect=simulate_successful_delay)
+        mock_instance: AsyncMock = setup_mock_instance(producer_mock)
+        mock_instance.start = AsyncMock(side_effect=simulate_successful_delay)
         mock_instance.configure_mock(_closed=False)
-        mock_instance.send = Mock(side_effect=simulate_successful_delay)
-        mock_instance.stop = Mock(side_effect=simulate_successful_delay)
+        mock_instance.send = AsyncMock(side_effect=simulate_successful_delay)
+        mock_instance.stop = AsyncMock(side_effect=simulate_successful_delay)
 
         handler = KafkaManager()
 
@@ -95,9 +95,9 @@ class TestHandler:
         messages before the producer is ready. We avoid this by awaiting the initialization
         method before sending
         """
-        mock_instance: MagicMock = setup_mock_instance(producer_mock)
-        mock_instance.start = Mock(side_effect=simulate_successful_delay)
-        mock_instance.send = Mock(side_effect=simulate_successful_delay)
+        mock_instance: AsyncMock = setup_mock_instance(producer_mock)
+        mock_instance.start = AsyncMock(side_effect=simulate_successful_delay)
+        mock_instance.send = AsyncMock(side_effect=simulate_successful_delay)
 
         handler = KafkaManager()
         await handler.setup()
@@ -118,8 +118,8 @@ class TestHandler:
         """
         Given a loop with mixed Tasks, only cancel what is acceptable.
         """
-        mock_instance: MagicMock = setup_mock_instance(producer_mock)
-        mock_instance.start = Mock(side_effect=simulate_successful_delay)
+        mock_instance: AsyncMock = setup_mock_instance(producer_mock)
+        mock_instance.start = AsyncMock(side_effect=simulate_successful_delay)
 
         async def send(*_: any) -> None:
             """SHOULD BE CANCELLED"""

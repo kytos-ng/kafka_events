@@ -1,6 +1,6 @@
 """ Test suite for the Producer class """
 
-from unittest.mock import patch, MagicMock, Mock
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from napps.kytos.kafka_events.managers.kafka._producer import Producer
 from napps.kytos.kafka_events.tests.helpers.producer_helper import (
@@ -25,8 +25,8 @@ class TestProducer:
         Given a valid broker to connect to, Producer should successfully complete its setup
         routine.
         """
-        mock_instance: MagicMock = setup_mock_instance(producer_mock)
-        mock_instance.start = Mock(side_effect=simulate_successful_delay)
+        mock_instance: AsyncMock = setup_mock_instance(producer_mock)
+        mock_instance.start = AsyncMock(side_effect=simulate_successful_delay)
         mock_instance.configure_mock(_closed=False)
 
         producer: Producer = await create_and_initialize_producer(
@@ -47,14 +47,14 @@ class TestProducer:
         """
         On setup, the Producer object should sent initialized to true.
         """
-        mock_instance: MagicMock = setup_mock_instance(producer_mock)
-        mock_instance.start = Mock(side_effect=simulate_successful_delay)
+        mock_instance: AsyncMock = setup_mock_instance(producer_mock)
+        mock_instance.start = AsyncMock(side_effect=simulate_successful_delay)
 
         producer: Producer = await create_and_initialize_producer(
             bootstrap_servers="localhost:9092"
         )
 
-        assert producer._initialized is True
+        assert producer._initialized is True  # pylint:disable=protected-access
 
         # Assert mocks
 
