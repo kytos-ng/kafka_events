@@ -17,7 +17,7 @@ async def simulate_long_timeout(*_: any) -> None:
     Simulate a timeout. Goes just above the upper boundary to be as quick as
     possible, while still timing out
     """
-    await asyncio.sleep(KAFKA_TIMELIMIT+1)
+    await asyncio.sleep(KAFKA_TIMELIMIT + 1)
 
 
 async def simple_async_func() -> None:

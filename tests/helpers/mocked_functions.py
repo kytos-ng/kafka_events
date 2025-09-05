@@ -2,6 +2,7 @@
 
 from unittest.mock import MagicMock, AsyncMock
 
+
 def setup_mock_instance(mock: MagicMock) -> MagicMock:
     """Return the mock instance from a mock"""
     mock_instance = AsyncMock()
