@@ -7,7 +7,6 @@ from napps.kytos.kafka_events.tests.helpers.producer_helper import (
     create_and_initialize_producer,
 )
 from napps.kytos.kafka_events.tests.helpers.mocked_functions import (
-    simulate_successful_delay,
     setup_mock_instance,
 )
 
@@ -26,7 +25,7 @@ class TestProducer:
         routine.
         """
         mock_instance: AsyncMock = setup_mock_instance(producer_mock)
-        mock_instance.start = AsyncMock(side_effect=simulate_successful_delay)
+        mock_instance.start = AsyncMock()
         mock_instance.configure_mock(_closed=False)
 
         producer: Producer = await create_and_initialize_producer(
@@ -48,7 +47,7 @@ class TestProducer:
         On setup, the Producer object should sent initialized to true.
         """
         mock_instance: AsyncMock = setup_mock_instance(producer_mock)
-        mock_instance.start = AsyncMock(side_effect=simulate_successful_delay)
+        mock_instance.start = AsyncMock()
 
         producer: Producer = await create_and_initialize_producer(
             bootstrap_servers="localhost:9092"

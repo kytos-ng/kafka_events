@@ -6,6 +6,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
+from napps.kytos.kafka_events.settings import KAFKA_TIMELIMIT
 from napps.kytos.kafka_events.tests.helpers.producer_helper import (
     create_and_initialize_producer,
 )
@@ -13,9 +14,10 @@ from napps.kytos.kafka_events.tests.helpers.producer_helper import (
 
 async def simulate_long_timeout(*_: any) -> None:
     """
-    Simulate a 60 second timeout. Much longer than what is accepted.
+    Simulate a timeout. Goes just above the upper boundary to be as quick as
+    possible, while still timing out
     """
-    await asyncio.sleep(60)
+    await asyncio.sleep(KAFKA_TIMELIMIT+1)
 
 
 async def simple_async_func() -> None:

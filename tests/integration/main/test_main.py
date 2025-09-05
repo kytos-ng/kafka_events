@@ -5,7 +5,6 @@ from unittest.mock import patch, MagicMock, AsyncMock, Mock
 
 from napps.kytos.kafka_events.main import Main
 from napps.kytos.kafka_events.tests.helpers.mocked_functions import (
-    simulate_successful_delay,
     setup_mock_instance,
 )
 
@@ -17,7 +16,7 @@ class TestMain:
     async def test_setup(self, producer_mock: MagicMock):
         """Test that main's setup works correctly"""
         mock_instance: AsyncMock = setup_mock_instance(producer_mock)
-        mock_instance.start = AsyncMock(side_effect=simulate_successful_delay)
+        mock_instance.start = AsyncMock()
 
         # Create main object
 
@@ -34,7 +33,7 @@ class TestMain:
     async def test_execute(self, producer_mock: MagicMock):
         """Test that main has an execute method"""
         mock_instance: AsyncMock = setup_mock_instance(producer_mock)
-        mock_instance.start = AsyncMock(side_effect=simulate_successful_delay)
+        mock_instance.start = AsyncMock()
 
         main = Main(None)
 
@@ -51,9 +50,7 @@ class TestMain:
     async def test_shutdown(self, producer_mock: MagicMock):
         """Test that main has a working shutdown method"""
         mock_instance: AsyncMock = setup_mock_instance(producer_mock)
-        mock_instance.initialize_producer = AsyncMock(
-            side_effect=simulate_successful_delay
-        )
+        mock_instance.initialize_producer = AsyncMock()
         mock_instance.sync_close = Mock(side_effect=lambda x, callback=None: None)
 
         main = Main(None)
