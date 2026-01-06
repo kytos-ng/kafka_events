@@ -34,7 +34,7 @@ BATCH_SIZE = 64 * 1024
 
 # Linger: (int) The amount of time (in milliseconds) that the producer will wait before
 # sending the batch.
-LINGER_MS = 50
+LINGER_MS = 0
 
 # Request Size: (int) The maximum amount (in bytes) allowed to be sent per request.
 # 1024 * 1024 * 5 == 5 MB
@@ -42,7 +42,7 @@ MAX_REQUEST_SIZE = 1024 * 1024 * 5
 
 # Kafka Time Limit: (float | int) The amount of time (in seconds) that any connection to kafka must
 # complete before.
-KAFKA_TIMELIMIT = 5
+KAFKA_TIMELIMIT = 10
 
 # FILTERING
 
