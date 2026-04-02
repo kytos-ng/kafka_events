@@ -34,7 +34,7 @@ BATCH_SIZE = 64 * 1024
 
 # Linger: (int) The amount of time (in milliseconds) that the producer will wait before
 # sending the batch.
-LINGER_MS = 0
+LINGER_MS = 50
 
 # Request Size: (int) The maximum amount (in bytes) allowed to be sent per request.
 # 1024 * 1024 * 5 == 5 MB
