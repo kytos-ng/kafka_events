@@ -1,0 +1,26 @@
+openapi: 3.0.0
+info:
+  version: '1.0.0'
+  title: kafka_events
+  description: Kafka events NApp for Kytos SDN platform.
+servers:
+  - url: /api/kytos/kafka_events
+    description: Local server.
+paths:
+  /v1/filters:
+    get:
+      summary: Get the list of filters.
+      description: Get the list of filters.
+      operationId: get_filters
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  filters:
+                    type: array
+                example:
+                  filters: ["kytos/of_core.v0x04.messages.*", "kytos/flow_manager.messages.out.*"]
