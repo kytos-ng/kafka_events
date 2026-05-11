@@ -1,19 +1,23 @@
 """ Kytos/kafka_events """
 
+import pathlib
 import re
 import asyncio
 from asyncio import AbstractEventLoop
 
 from napps.kytos.kafka_events.settings import BLOCKED_PATTERNS
 from napps.kytos.kafka_events.managers.kafka.handler import KafkaManager
-from kytos.core import KytosEvent, KytosNApp, log
-from kytos.core.helpers import alisten_to
+from kytos.core import KytosEvent, KytosNApp, log, rest
+from kytos.core.helpers import alisten_to, load_spec
+from kytos.core.rest_api import JSONResponse, Request
 
 
 class Main(KytosNApp):
     """
     Main class of the Kytos/kafka_events NApp.
     """
+
+    spec = load_spec(pathlib.Path(__file__).parent / "openapi.yml")
 
     def setup(self):
         """
@@ -55,3 +59,10 @@ class Main(KytosNApp):
                 return
 
         await self._kafka_handler.send(event)
+
+    @rest("v1/filters", methods=["GET"])
+    async def get_filters(self, _request: Request) -> JSONResponse:
+        """
+        Get the list of filters.
+        """
+        return JSONResponse(content={"filters": list(BLOCKED_PATTERNS)})

@@ -75,19 +75,15 @@ To achieve match functionality, you must start and end your match with `^` and `
 
 ## GET /v1/filters
 
-Lists the summary of all Filter objects in the filtering pipeline, where the dynamic key is the UUID of the Filter. The response looks similar to the following:
+Lists the summary of all Filter objects in the filtering pipeline. The response looks similar to the following:
 
 ```
-[
-    "AOIJ8A9JCA898XA01": {
-        "pattern": str,
-        "mutable": bool,
-        "description": str
-    },
-    "OPKAS9C0A2OJE180U": {
-        "pattern": str,
-        ...
-    },
-    ...
-]
+{
+    "filters": [
+        "kytos/of_core.v0x04.messages.*",
+        "kytos/flow_manager.messages.out.*",
+        "kytos/of_lldp.messages.out.*",
+        "kytos/core.openflow.raw.*"
+    ]
+}
 ```
