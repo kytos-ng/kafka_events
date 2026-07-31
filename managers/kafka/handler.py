@@ -15,6 +15,7 @@ from napps.kytos.kafka_events.settings import (
     LINGER_MS,
     MAX_REQUEST_SIZE,
     TOPIC_NAME,
+    KAFKA_TIMELIMIT
 )
 
 
@@ -35,6 +36,9 @@ class KafkaManager:
             max_request_size=MAX_REQUEST_SIZE,
         )
         self._serializer = JSONSerializer()
+
+        self.eve_err = 0
+        self.list_eve_sent = [0]
 
     async def send(self, event: KytosEvent) -> None:
         """
@@ -57,8 +61,10 @@ class KafkaManager:
                 f"Producer tried publishing {event_name} [id: {event.id}, \
                       timestamp: {event.timestamp}] but timed out: {e}"
             )
+            self.eve_err += 1
         except KafkaError as e:
             log.error(f"Publishing to Kafka failed: {e}")
+            self.eve_err += 1
 
     async def setup(self) -> None:
         """

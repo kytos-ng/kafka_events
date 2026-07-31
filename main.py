@@ -14,6 +14,8 @@ from kytos.core import KytosEvent, KytosNApp, log, rest
 from kytos.core.helpers import alisten_to, load_spec
 from kytos.core.rest_api import JSONResponse, Request
 
+from random import choice, randint
+from string import ascii_uppercase
 
 class Main(KytosNApp):
     """
@@ -44,11 +46,11 @@ class Main(KytosNApp):
         self.events_sent = 0
         self.events_dropped = 0
 
-        self.list_received = [0]
-        self.list_sent = [0]
-        self.list_dropped = [0]
-        self.list_cpu = [0.0]
-        self.list_ram = [self._process.memory_info().rss]
+        self.list_received = []
+        self.list_sent = []
+        self.list_dropped = []
+        self.list_cpu = []
+        self.list_ram = []
 
     def execute(self):
         """
@@ -63,14 +65,27 @@ class Main(KytosNApp):
         log.info("SHUTDOWN kafka_events/Kytos")
         self._kafka_handler.shutdown(self._async_loop)
 
+    def reset_stats(self):
+        """
+        Reset the statistics of the NApp.
+        """
+        self.list_received = []
+        self.list_sent = []
+        self.list_dropped = []
+        self.list_cpu = []
+        self.list_ram = []
+        self._kafka_handler.list_eve_sent = []
+
     async def set_stats(self):
         while True:
+            self._kafka_handler.list_eve_sent.append(self._kafka_handler.eve_err)
             self.list_received.append(self.events_received)
             self.list_sent.append(self.events_sent)
             self.list_dropped.append(self.events_dropped)
             self.list_cpu.append(self._process.cpu_percent())
             self.list_ram.append(self._process.memory_info().rss)
             self.events_received = 0
+            self._kafka_handler.eve_err = 0
             self.events_sent = 0
             self.events_dropped = 0
             await asyncio.sleep(1)
@@ -92,6 +107,14 @@ class Main(KytosNApp):
         events_figure.add_trace(
             go.Scatter(x=samples, y=self.list_sent, mode="lines", name="Sent")
         )
+        events_figure.add_trace(
+            go.Scatter(
+                x=samples,
+                y=self._kafka_handler.list_eve_sent,
+                mode="lines",
+                name="Errors",
+            )
+        )
         if include_dropped:
             events_figure.add_trace(
                 go.Scatter(
@@ -105,6 +128,27 @@ class Main(KytosNApp):
             title="Kafka Events",
             xaxis_title="Seconds",
             yaxis_title="Events per second",
+        )
+        # Total displayed
+        total_events = sum(self.list_sent)
+        total_errors = sum(self._kafka_handler.list_eve_sent)
+        events_figure.add_annotation(
+            x=0.01,
+            y=0.99,
+            xref="paper",
+            yref="paper",
+            xanchor="left",
+            yanchor="top",
+            align="left",
+            showarrow=False,
+            text=(
+                f"Total Events: {total_events:,}<br>"
+                f"Total Errors: {total_errors:,}"
+            ),
+            bordercolor="black",
+            borderwidth=1,
+            borderpad=6,
+            bgcolor="rgba(255,255,255,0.85)",
         )
 
         cpu_figure = go.Figure(
@@ -177,3 +221,19 @@ class Main(KytosNApp):
         Get the list of filters.
         """
         return JSONResponse(content={"filters": list(BLOCKED_PATTERNS)})
+
+    def start_test(self, seconds=120, messages_per_second=5000, ) -> JSONResponse:
+        async def run_test(seconds, messages_per_second):
+            log.info(f"START TEST: {seconds} seconds, {messages_per_second} messages per second")
+            for i in range(seconds):
+                for _ in range(messages_per_second):
+                    length = randint(800, 1500)  # Random length between 800 and 1500
+                    my_string = ''.join(choice(ascii_uppercase) for i in range(length))
+                    await self.controller.buffers.app.aput(
+                        KytosEvent("kytos/sample_ui.do_work", content={"value": my_string})
+                    )
+                await asyncio.sleep(1)
+                log.info(f"TEST {i + 1}/{seconds} HAVE PASSED.")
+            log.info("END TEST")
+
+        self._async_loop.create_task(run_test(seconds, messages_per_second))

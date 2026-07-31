@@ -37,6 +37,7 @@ class Producer:
             linger_ms=linger_ms,
             max_batch_size=max_batch_size,
             max_request_size=max_request_size,
+            request_timeout_ms=KAFKA_TIMELIMIT * 1000,
         )
         self._topic: str = topic_name
         self._initialized: bool = False
@@ -65,8 +66,11 @@ class Producer:
         if not self.is_ready():
             await self.initialize_producer()
 
+        #print(f"encoded_data size: {len(encoded_data)} bytes")
+
         await asyncio.wait_for(
-            self._producer.send(self._topic, encoded_data), KAFKA_TIMELIMIT
+            self._producer.send_and_wait(self._topic, encoded_data),
+            KAFKA_TIMELIMIT,
         )
 
     async def shutdown(self) -> None:
