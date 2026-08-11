@@ -54,7 +54,7 @@ class KafkaManager:
 
         try:
             await self._producer.send_data(
-                self._serializer.serialize_and_encode(event_name, event_message)
+                self._serializer.serialize_and_encode(event_name, event_message), event_name
             )
         except asyncio.TimeoutError as e:
             log.error(

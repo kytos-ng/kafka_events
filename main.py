@@ -106,6 +106,14 @@ class Main(KytosNApp):
             self.events_dropped = 0
             await asyncio.sleep(1)
 
+    def get_event_sizes(self):
+        event_dict = self._kafka_handler._producer.event_size
+        my_list = []
+        for name, size in event_dict.items():
+            my_list.append((size, name))
+        my_list.sort(reverse=True)
+        return my_list
+
     def close_it(self):
         self.stop_it = True
         self.final_stats()

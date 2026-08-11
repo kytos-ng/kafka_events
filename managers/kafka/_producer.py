@@ -9,7 +9,7 @@ from aiokafka.producer.sender import Sender
 
 from kytos.core import log
 from napps.kytos.kafka_events.settings import KAFKA_TIMELIMIT
-
+from collections import defaultdict
 
 class Producer:
     """The producer class. Uses AIOKafkaProducer to handle Kafka tasks"""
@@ -42,6 +42,7 @@ class Producer:
         self._topic: str = topic_name
         self._initialized: bool = False
         self._lock = asyncio.Lock()
+        self.event_size = defaultdict(int)
 
     async def initialize_producer(self) -> None:
         """
@@ -55,17 +56,18 @@ class Producer:
 
         log.info("Successfully connected to Kafka server.")
 
-    async def send_data(self, encoded_data: bytes) -> None:
+    async def send_data(self, encoded_data: bytes, event_name: str) -> None:
         """
         Send data to AIOKafkaProducer's batch, which is then sent to Kafka after a short delay.
 
         The incoming data must already have been serialized and encoded.
         """
+        
         if self.is_closed():
             return
         if not self.is_ready():
             await self.initialize_producer()
-
+        self.event_size[event_name] = max(len(encoded_data), self.event_size[event_name])
         #print(f"encoded_data size: {len(encoded_data)} bytes")
         await self._producer.send_and_wait(self._topic, encoded_data)
         #await asyncio.wait_for(
