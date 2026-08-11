@@ -67,11 +67,11 @@ class Producer:
             await self.initialize_producer()
 
         #print(f"encoded_data size: {len(encoded_data)} bytes")
-
-        await asyncio.wait_for(
-            self._producer.send_and_wait(self._topic, encoded_data),
-            KAFKA_TIMELIMIT,
-        )
+        await self._producer.send_and_wait(self._topic, encoded_data)
+        #await asyncio.wait_for(
+        #    self._producer.send_and_wait(self._topic, encoded_data),
+        #    KAFKA_TIMELIMIT,
+        #)
 
     async def shutdown(self) -> None:
         """

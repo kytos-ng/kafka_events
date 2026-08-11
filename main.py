@@ -38,6 +38,7 @@ class Main(KytosNApp):
         ]
         self._process = psutil.Process()
         self._process.cpu_percent()
+        self.cpu_count = psutil.cpu_count()
 
         self._tasks.append(self._async_loop.create_task(self._kafka_handler.setup()))
         self._tasks.append(self._async_loop.create_task(self.set_stats()))
@@ -51,6 +52,9 @@ class Main(KytosNApp):
         self.list_dropped = []
         self.list_cpu = []
         self.list_ram = []
+        self.last_event = None
+        self.counter = 0
+        self.stop_it = False
 
     def execute(self):
         """
@@ -76,19 +80,36 @@ class Main(KytosNApp):
         self.list_ram = []
         self._kafka_handler.list_eve_sent = []
 
+    def final_stats(self):
+        self._kafka_handler.list_eve_sent.append(self._kafka_handler.eve_err)
+        self.list_received.append(self.events_received)
+        self.list_sent.append(self.events_sent)
+        self.list_dropped.append(self.events_dropped)
+        self.list_cpu.append(self._process.cpu_percent()/self.cpu_count)
+        self.list_ram.append(self._process.memory_info().rss)
+        self.events_received = 0
+        self._kafka_handler.eve_err = 0
+        self.events_sent = 0
+        self.events_dropped = 0
+
     async def set_stats(self):
-        while True:
+        while True and not self.stop_it:
             self._kafka_handler.list_eve_sent.append(self._kafka_handler.eve_err)
             self.list_received.append(self.events_received)
             self.list_sent.append(self.events_sent)
             self.list_dropped.append(self.events_dropped)
-            self.list_cpu.append(self._process.cpu_percent())
+            self.list_cpu.append(self._process.cpu_percent()/self.cpu_count)
             self.list_ram.append(self._process.memory_info().rss)
             self.events_received = 0
             self._kafka_handler.eve_err = 0
             self.events_sent = 0
             self.events_dropped = 0
             await asyncio.sleep(1)
+
+    def close_it(self):
+        self.stop_it = True
+        self.final_stats()
+        self.create_graphs()
 
     def create_graphs(
         self,
@@ -166,6 +187,24 @@ class Main(KytosNApp):
             xaxis_title="Seconds",
             yaxis_title="CPU (%)",
         )
+        cpu_figure.add_annotation(
+            x=0.01,
+            y=0.99,
+            xref="paper",
+            yref="paper",
+            xanchor="left",
+            yanchor="top",
+            align="left",
+            showarrow=False,
+            text=(
+                f"CPU Count: {self.cpu_count}<br>"
+                f"Max CPU Usage: {max(self.list_cpu):.2f}%<br>"
+            ),
+            bordercolor="black",
+            borderwidth=1,
+            borderpad=6,
+            bgcolor="rgba(255,255,255,0.85)",
+        )
 
         ram_figure = go.Figure(
             data=[
@@ -197,8 +236,6 @@ class Main(KytosNApp):
             "ram": ram_path,
         }
 
-    
-
     @alisten_to(".*")
     async def handle_events(self, event: KytosEvent):
         """
@@ -206,14 +243,23 @@ class Main(KytosNApp):
 
         Accepts every propagated event (uses .* regex syntax)
         """
+        if self.stop_it:
+            return
         self.events_received += 1
         for pattern in self._blocked:
             if pattern.search(event.name):
                 self.events_dropped += 1
                 return
-
+        self.last_event = event
+        self.counter += 1
+        event.content["counter"] = self.counter
         await self._kafka_handler.send(event)
         self.events_sent += 1
+
+    @rest("v1/ended", methods=["POST"])
+    async def end_test(self, _request: Request) -> JSONResponse:
+        self.create_graphs()
+        return JSONResponse(content={"message": "OKA."}, status_code=200)
 
     @rest("v1/filters", methods=["GET"])
     async def get_filters(self, _request: Request) -> JSONResponse:
@@ -223,17 +269,20 @@ class Main(KytosNApp):
         return JSONResponse(content={"filters": list(BLOCKED_PATTERNS)})
 
     def start_test(self, seconds=120, messages_per_second=5000, ) -> JSONResponse:
-        async def run_test(seconds, messages_per_second):
+        async def run_test(seconds, messages_per_second, test):
             log.info(f"START TEST: {seconds} seconds, {messages_per_second} messages per second")
             for i in range(seconds):
                 for _ in range(messages_per_second):
                     length = randint(800, 1500)  # Random length between 800 and 1500
                     my_string = ''.join(choice(ascii_uppercase) for i in range(length))
                     await self.controller.buffers.app.aput(
-                        KytosEvent("kytos/sample_ui.do_work", content={"value": my_string})
+                        KytosEvent(f"kytos/kafka.test{test}", content={"value": my_string})
                     )
                 await asyncio.sleep(1)
                 log.info(f"TEST {i + 1}/{seconds} HAVE PASSED.")
             log.info("END TEST")
-
-        self._async_loop.create_task(run_test(seconds, messages_per_second))
+        messages_per_second = messages_per_second//4
+        self._async_loop.create_task(run_test(seconds, messages_per_second, 1))
+        self._async_loop.create_task(run_test(seconds, messages_per_second, 2))
+        self._async_loop.create_task(run_test(seconds, messages_per_second, 3))
+        self._async_loop.create_task(run_test(seconds, messages_per_second, 4))
