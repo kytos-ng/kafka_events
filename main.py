@@ -1,5 +1,6 @@
 """ Kytos/kafka_events """
 
+import json
 import pathlib
 import re
 import asyncio
@@ -55,6 +56,17 @@ class Main(KytosNApp):
         self.last_event = None
         self.counter = 0
         self.stop_it = False
+        #self._tasks.append(self._async_loop.create_task(self.automatic_test()))
+
+    async def automatic_test(self):
+        await asyncio.sleep(10)
+        log.info("Automatic test started")
+        time = 300
+        await self.start_test_async(seconds=time)
+        log.info("Automatic test finished")
+        await asyncio.sleep(10)
+        self.close_it()
+        log.info("Should be good to go :D")
 
     def execute(self):
         """
@@ -123,6 +135,7 @@ class Main(KytosNApp):
         self,
         include_dropped: bool = False,
         output_dir: pathlib.Path | str | None = None,
+        font_size: int = 30,
     ) -> dict[str, pathlib.Path]:
         output_path = (
             pathlib.Path(output_dir)
@@ -157,6 +170,9 @@ class Main(KytosNApp):
             title="Kafka Events",
             xaxis_title="Seconds",
             yaxis_title="Events per second",
+            font=dict(size=font_size),
+            width=1920,
+            height=1080,
         )
         # Total displayed
         total_events = sum(self.list_sent)
@@ -194,6 +210,9 @@ class Main(KytosNApp):
             title="CPU Percentage",
             xaxis_title="Seconds",
             yaxis_title="CPU (%)",
+            font=dict(size=font_size),
+            width=1920,
+            height=1080,
         )
         cpu_figure.add_annotation(
             x=0.01,
@@ -228,20 +247,54 @@ class Main(KytosNApp):
             title="Memory Usage",
             xaxis_title="Seconds",
             yaxis_title="RAM (MiB)",
+            font=dict(size=font_size),
+            width=1920,
+            height=1080,
+        )
+        ram_figure.add_annotation(
+            x=0.01,
+            y=0.99,
+            xref="paper",
+            yref="paper",
+            xanchor="left",
+            yanchor="top",
+            align="left",
+            showarrow=False,
+            text=(
+                f"Max RAM Usage: {max(self.list_ram) / (1024 * 1024):.2f} MiB<br>"
+            ),
+            bordercolor="black",
+            borderwidth=1,
+            borderpad=6,
+            bgcolor="rgba(255,255,255,0.85)",
         )
 
         events_path = output_path / "events.html"
         cpu_path = output_path / "cpu.html"
         ram_path = output_path / "ram.html"
+        data_path = output_path / "graph_data.json"
+
+        graph_data = {
+            "samples": samples,
+            "events": {
+                "sent": self.list_sent,
+                "errors": self._kafka_handler.list_eve_sent,
+                "dropped": self.list_dropped,
+            },
+            "cpu": self.list_cpu,
+            "ram": self.list_ram,
+        }
 
         events_figure.write_html(events_path)
         cpu_figure.write_html(cpu_path)
         ram_figure.write_html(ram_path)
+        data_path.write_text(json.dumps(graph_data, indent=2), encoding="utf-8")
 
         return {
             "events": events_path,
             "cpu": cpu_path,
             "ram": ram_path,
+            "data": data_path,
         }
 
     @alisten_to(".*")
@@ -276,20 +329,54 @@ class Main(KytosNApp):
         """
         return JSONResponse(content={"filters": list(BLOCKED_PATTERNS)})
 
-    def start_test(self, seconds=120, messages_per_second=5000, ) -> JSONResponse:
+    async def start_test_async(self, seconds=300, messages_per_second=5000) -> None:
         async def run_test(seconds, messages_per_second, test):
             log.info(f"START TEST: {seconds} seconds, {messages_per_second} messages per second")
+            
+            #topic_name = "test_1" if test in (1, 3) else "test_2"
+            topic_name = f"test_{str(test)}"
             for i in range(seconds):
                 for _ in range(messages_per_second):
                     length = randint(800, 1500)  # Random length between 800 and 1500
                     my_string = ''.join(choice(ascii_uppercase) for i in range(length))
                     await self.controller.buffers.app.aput(
-                        KytosEvent(f"kytos/kafka.test{test}", content={"value": my_string})
+                        KytosEvent(
+                            f"kytos/kafka.test{test}",
+                            content={"value": my_string, "_kafka_topic": topic_name},
+                        )
                     )
                 await asyncio.sleep(1)
                 log.info(f"TEST {i + 1}/{seconds} HAVE PASSED.")
             log.info("END TEST")
-        messages_per_second = messages_per_second//4
+        messages_per_second = messages_per_second // 4
+        tasks = [
+            self._async_loop.create_task(run_test(seconds, messages_per_second, test))
+            for test in range(1, 5)
+        ]
+        await asyncio.gather(*tasks)
+
+    def start_test(self, seconds=300, messages_per_second=5000) -> None:
+        async def run_test(seconds, messages_per_second, test):
+            log.info(f"START TEST: {seconds} seconds, {messages_per_second} messages per second")
+            
+            #topic_name = "test_1" if test in (1, 3) else "test_2"
+            topic_name = f"test_{str(test)}"
+            for i in range(seconds):
+                for _ in range(messages_per_second):
+                    length = randint(800, 1500)  # Random length between 800 and 1500
+                    my_string = ''.join(choice(ascii_uppercase) for i in range(length))
+                    await self.controller.buffers.app.aput(
+                        KytosEvent(
+                            f"kytos/kafka.test{test}",
+                            content={"value": my_string,
+                                     "_kafka_topic": topic_name},
+                                     #"_kafka_topic": "event_logs"},
+                        )
+                    )
+                await asyncio.sleep(1)
+                log.info(f"TEST {i + 1}/{seconds} HAVE PASSED.")
+            log.info("END TEST")
+        messages_per_second = messages_per_second // 4
         self._async_loop.create_task(run_test(seconds, messages_per_second, 1))
         self._async_loop.create_task(run_test(seconds, messages_per_second, 2))
         self._async_loop.create_task(run_test(seconds, messages_per_second, 3))

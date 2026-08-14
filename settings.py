@@ -42,7 +42,7 @@ MAX_REQUEST_SIZE = 1024 * 1024 * 5
 
 # Kafka Time Limit: (float | int) The amount of time (in seconds) that any connection to kafka must
 # complete before.
-KAFKA_TIMELIMIT = 50
+KAFKA_TIMELIMIT = 40
 
 # FILTERING
 

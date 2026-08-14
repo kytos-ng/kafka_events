@@ -50,11 +50,14 @@ class KafkaManager:
         - Awaits the producer to enqueue the message
         """
         event_name: str = event.name
-        event_message: str = event.content
+        event_message = event.content
+        topic_name = event_message.pop("_kafka_topic", None)
 
         try:
             await self._producer.send_data(
-                self._serializer.serialize_and_encode(event_name, event_message), event_name
+                self._serializer.serialize_and_encode(event_name, event_message),
+                event_name,
+                topic_name,
             )
         except asyncio.TimeoutError as e:
             log.error(
