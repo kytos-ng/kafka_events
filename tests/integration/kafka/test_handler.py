@@ -42,7 +42,7 @@ class TestHandler:
         """
         mock_instance: AsyncMock = setup_mock_instance(producer_mock)
         mock_instance.start = AsyncMock()
-        mock_instance.send = AsyncMock()
+        mock_instance.send_and_wait = AsyncMock()
 
         handler = KafkaManager()
         await handler.setup()
@@ -54,7 +54,7 @@ class TestHandler:
 
         producer_mock.assert_called_once()
         mock_instance.start.assert_called_once()
-        mock_instance.send.assert_called_once()
+        mock_instance.send_and_wait.assert_called_once()
 
     @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
     async def test_send_returns_when_producer_is_closed(
@@ -66,7 +66,7 @@ class TestHandler:
         mock_instance: AsyncMock = setup_mock_instance(producer_mock)
         mock_instance.start = AsyncMock()
         mock_instance.configure_mock(_closed=False)
-        mock_instance.send = AsyncMock()
+        mock_instance.send_and_wait = AsyncMock()
         mock_instance.stop = AsyncMock()
 
         handler = KafkaManager()
@@ -96,7 +96,7 @@ class TestHandler:
         """
         mock_instance: AsyncMock = setup_mock_instance(producer_mock)
         mock_instance.start = AsyncMock()
-        mock_instance.send = AsyncMock()
+        mock_instance.send_and_wait = AsyncMock()
 
         handler = KafkaManager()
         await handler.setup()
@@ -108,7 +108,7 @@ class TestHandler:
         # Assert mocks
 
         mock_instance.start.assert_called_once()
-        mock_instance.send.assert_called_once()
+        mock_instance.send_and_wait.assert_called_once()
 
     @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
     async def test_shutdown_only_cancels_valid_data(
