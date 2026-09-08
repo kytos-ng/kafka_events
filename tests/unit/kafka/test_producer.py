@@ -10,6 +10,8 @@ from napps.kytos.kafka_events.settings import KAFKA_TIMELIMIT
 from napps.kytos.kafka_events.tests.helpers.producer_helper import (
     create_and_initialize_producer,
 )
+from aiokafka.errors import KafkaError
+from tenacity import wait_none
 
 
 async def simulate_long_timeout(*_: any) -> None:
@@ -30,34 +32,18 @@ class TestProducer:
     Test suite
     """
 
-    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    @patch("asyncio.wait_for")
     async def test_producer_raises_exception_on_timeout_on_initialization(
-        self, mock_producer: MagicMock
+        self, asyn_mock
     ) -> None:
         """
         When initializing, the producer should raise a timeout exception if it takes too long
         """
-        mock_producer_instance: MagicMock = mock_producer.return_value
-        mock_producer_instance.start.side_effect = simulate_long_timeout
+        asyn_mock.side_effect = asyncio.TimeoutError
+        # mock_producer_instance.start.side_effect = simulate_long_timeout
 
         with pytest.raises(asyncio.TimeoutError):
             await create_and_initialize_producer("localhost:9092")
-
-    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
-    async def test_producer_raises_exception_on_timeout_on_send(
-        self, mock_producer: MagicMock
-    ) -> None:
-        """
-        When sending data, the producer should raise a timeout exception if it takes too long
-        """
-        mock_producer_instance: MagicMock = mock_producer.return_value
-        mock_producer_instance.start.side_effect = simple_async_func
-        mock_producer_instance.send.side_effect = simulate_long_timeout
-
-        producer = await create_and_initialize_producer("localhost:9092")
-
-        with pytest.raises(asyncio.TimeoutError):
-            await producer.send_data(json.dumps("Test").encode())
 
     @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
     async def test_producer_accurately_cancels_methods(
@@ -84,3 +70,19 @@ class TestProducer:
 
         with pytest.raises(asyncio.CancelledError):
             await send_data
+
+    @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
+    async def test_send_data_retries(self, mock_producer: MagicMock) -> None:
+        """Test send_data with retries"""
+        mock_producer_instance: MagicMock = mock_producer.return_value
+        mock_producer_instance.start.side_effect = simple_async_func
+        producer = await create_and_initialize_producer("localhost:9092")
+        mock_producer_instance.send_and_wait.side_effect = KafkaError
+
+        # Do not wait
+        producer.send_data.retry.wait = wait_none()
+
+        with pytest.raises(KafkaError):
+            await producer.send_data(json.dumps("test").encode())
+
+        assert mock_producer_instance.send_and_wait.call_count == 3
