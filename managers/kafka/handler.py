@@ -17,7 +17,10 @@ from napps.kytos.kafka_events.settings import (
     TOPIC_NAME,
     KAFKA_TIMELIMIT
 )
-
+from aiokafka.errors import KafkaError
+from kytos.core.retry import before_sleep
+from tenacity import retry, stop_after_attempt, wait_random, retry_if_exception_type
+from random import randint
 
 class KafkaManager:
     """Acts like an orchestrator for internal components."""
@@ -38,9 +41,17 @@ class KafkaManager:
         self._serializer = JSONSerializer()
 
         self.eve_err = 0
+        self.eve_retry = 0
         self.list_eve_sent = [0]
 
-    async def send(self, event: KytosEvent) -> None:
+    #@retry(
+    #    stop=stop_after_attempt(3),
+    #    before_sleep=before_sleep,
+    #    wait=wait_random(min=10, max=12),
+    #    retry=retry_if_exception_type(KafkaError),
+    #    reraise=True,
+    #)
+    async def send(self, event: KytosEvent, tries=0) -> None:
         """
         Send data to Kafka. Uses the following flow:
 
@@ -51,7 +62,7 @@ class KafkaManager:
         """
         event_name: str = event.name
         event_message = event.content
-        topic_name = event_message.pop("_kafka_topic", None)
+        topic_name = event_message.pop("kafka_topic", None)
 
         try:
             await self._producer.send_data(
@@ -66,8 +77,18 @@ class KafkaManager:
             )
             self.eve_err += 1
         except KafkaError as e:
-            log.error(f"Publishing to Kafka failed: {e}")
-            self.eve_err += 1
+            #log.error(f"Publishing to Kafka failed: {e}.")
+            log.error(f"Publishing to Kafka failed: {e}. Try {tries + 1}/3")
+            #self.eve_err += 1
+            self.eve_retry += 1
+            if tries < 3:
+                tries += 1
+                #await asyncio.sleep(randint(30, 36))
+                await asyncio.sleep(10)
+                await self.send(event, tries=tries)
+            else:
+                raise e
+            #raise e
 
     async def setup(self) -> None:
         """

@@ -6,10 +6,12 @@ from typing import Callable
 from aiokafka import AIOKafkaClient, AIOKafkaProducer
 from aiokafka.conn import AIOKafkaConnection
 from aiokafka.producer.sender import Sender
-
+from aiokafka.errors import KafkaError
+from kytos.core.retry import before_sleep
 from kytos.core import log
 from napps.kytos.kafka_events.settings import KAFKA_TIMELIMIT
 from collections import defaultdict
+from tenacity import retry, stop_after_attempt, wait_random, retry_if_exception_type
 
 class Producer:
     """The producer class. Uses AIOKafkaProducer to handle Kafka tasks"""
@@ -56,6 +58,13 @@ class Producer:
 
         log.info("Successfully connected to Kafka server.")
 
+    #@retry(
+    #    stop=stop_after_attempt(3),
+    #    before_sleep=before_sleep,
+    #    wait=wait_random(min=10, max=12),
+    #    retry=retry_if_exception_type(KafkaError),
+    #    reraise=True,
+    #)
     async def send_data(
         self, encoded_data: bytes, event_name: str, topic_name: str | None = None
     ) -> None:
@@ -70,7 +79,8 @@ class Producer:
         if not self.is_ready():
             await self.initialize_producer()
         self.event_size[event_name] = max(len(encoded_data), self.event_size[event_name])
-        topic = topic_name or self._topic
+        #topic = topic_name or self._topic
+        topic = event_name.split(".")[-1]
         #print(f"encoded_data size: {len(encoded_data)} bytes")
         await self._producer.send_and_wait(topic, encoded_data)
         #await asyncio.wait_for(
