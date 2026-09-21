@@ -36,7 +36,7 @@ class KafkaManager:
         )
         self._serializer = JSONSerializer()
 
-    async def send(self, event: KytosEvent) -> None:
+    async def send(self, event: KytosEvent, topic: str = None) -> None:
         """
         Send data to Kafka. Uses the following flow:
 
@@ -50,7 +50,8 @@ class KafkaManager:
 
         try:
             await self._producer.send_data(
-                self._serializer.serialize_and_encode(event_name, event_message)
+                self._serializer.serialize_and_encode(event_name, event_message),
+                topic=topic,
             )
         except asyncio.TimeoutError as e:
             log.error(

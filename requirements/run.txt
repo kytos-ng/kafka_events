@@ -8,7 +8,7 @@ aiokafka==0.14.0
     # via -r requirements/run.in
 async-timeout==5.0.1
     # via aiokafka
-packaging==24.3
+packaging==24.0
     # via aiokafka
 typing-extensions==4.10.0
     # via aiokafka

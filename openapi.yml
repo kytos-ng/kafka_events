@@ -7,11 +7,11 @@ servers:
   - url: /api/kytos/kafka_events
     description: Local server.
 paths:
-  /v1/filters:
+  /v1/patterns:
     get:
-      summary: Get the list of filters.
-      description: Get the list of filters.
-      operationId: get_filters
+      summary: Get the list of patterns.
+      description: Get the list of patterns.
+      operationId: get_patterns
       responses:
         '200':
           description: OK
@@ -20,7 +20,125 @@ paths:
               schema:
                 type: object
                 properties:
-                  filters:
+                  allowed:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+                  blocked:
                     type: array
+                    items:
+                      type: string
                 example:
-                  filters: ["kytos/of_core.v0x04.messages.*", "kytos/flow_manager.messages.out.*"]
+                  allowed:
+                    topic1: ["kytos/of_core.v0x04.messages.*", "kytos/flow_manager.messages.out.*"]
+                    topic2: ["kytos/flow_manager.messages.in.*"]
+                  blocked: ["kytos/*/messages.in.*"]
+    post:
+      summary: Add patterns.
+      description: Add patterns.
+      operationId: add_patterns
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+                minItems: 1
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicPattern'
+        '400':
+          description: Topic already added.
+
+  /v1/patterns/{topic}:
+    delete:
+      summary: Delete patterns for a specific topic.
+      description: Delete pattern for a specific topic.
+      operationId: delete_pattern
+      parameters:
+        - name: topic
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Topic not found
+    put:
+      summary: Replace patterns for a specific topic.
+      description: Replace patterns for a specific topic.
+      operationId: replace_pattern
+      parameters:
+        - name: topic
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+              minItems: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicPattern'
+        '404':
+          description: Topic not found
+    patch:
+      summary: Update patterns for a specific topic.
+      description: Update patterns for a specific topic.
+      operationId: update_pattern
+      parameters:
+        - name: topic
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:  
+                type: string
+              minItems: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicPattern'
+        '404':
+          description: Topic not found
+
+components:
+  schemas:
+    TopicPattern: # Can be referenced via '#/components/schemas/TopicPattern'
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: string
+        minItems: 1

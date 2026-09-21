@@ -7,13 +7,13 @@ This NApp integrates Kafka with the Kytos SDN platform to enable event-driven me
 - Asynchronous Kafka producer with support for compression and acknowledgments.
 - Event listener for new KytosEvents, which then serializes and publishes events to Kafka.
 - Resilient Kafka client with automatic retries for connectivity issues.
-- Uses Main asyncio loop to handle asynchronous tasks serialization and publishing.
-- Regex filtering logic to handle serialization permission easily and efficiently.
+- Uses the main asyncio loop to handle asynchronous task serialization and publishing.
+- Regex filtering logic to handle serialization permissions easily and efficiently.
 - Endpoints to dynamically add, list, and remove serialization permissions.
 
 # Installing
 
-To install this NApp, first, make sure to have the same venv activated as you have ``kytos`` installed on:
+To install this NApp, first make sure that you have activated the same virtual environment in which ``kytos`` is installed:
 
 .. code:: shell
 
@@ -21,7 +21,7 @@ To install this NApp, first, make sure to have the same venv activated as you ha
    $ cd kafka_events
    $ python3 -m pip install --editable .
 
-To install the kytos environment, please follow our
+To install the Kytos environment, please follow our
 `development environment setup <https://github.com/kytos-ng/documentation/blob/master/tutorials/napps/development_environment_setup.rst>`_.
 
 
@@ -51,11 +51,11 @@ source venv/bin/activate
 
 # Filtering
 
-Event consumption and serialization follows the principle of `least privilege`, meaning events must be explicitly accepted to be allowed to be propagated to Kafka. Filtering logic uses `regex` to quickly accept or deny incoming events, based on preset patterns. Currently, the NApp mainly supports wildcard logic, but can be easily extended for matching as well:
+Event consumption and serialization follow the principle of least privilege, meaning that events must be explicitly accepted before they can be propagated to Kafka. The filtering logic uses regular expressions to quickly accept or deny incoming events based on preset patterns. Currently, the NApp mainly supports wildcard logic, but it can easily be extended to support matching as well:
 
 ## Wildcard
 
-The expected functionality, takes in any regex logic and compares values to them
+The expected functionality takes any regular expression and compares values against it.
 
 ```
 # Example
@@ -71,19 +71,52 @@ To achieve match functionality, you must start and end your match with `^` and `
 {"pattern": "^amlight/pathfinder.created$", "description": "Allow ONLY this pattern"}
 ```
 
-# Planned Endpoint
+# Endpoints
 
-## GET /v1/filters
+## GET /v1/patterns
 
-Lists the summary of all Filter objects in the filtering pipeline. The response looks similar to the following:
+Lists a summary of all Pattern objects in the filtering pipeline. The response looks similar to the following:
 
 ```
-{
-    "filters": [
-        "kytos/of_core.v0x04.messages.*",
-        "kytos/flow_manager.messages.out.*",
-        "kytos/of_lldp.messages.out.*",
-        "kytos/core.openflow.raw.*"
-    ]
-}
+    {
+        "allowed": {
+            "flows": [
+                "kytos/flow_manager.flow.added",
+                "kytos.flow_manager.flows.single.install",
+            ],
+            "of_lldp": ["kytos/of_lldp.interface.is.nni"]
+        },
+        "blocked": [
+            "kytos/of_core.v0x04.messages.*",
+            "kytos/flow_manager.messages.out.*",
+            "kytos/of_lldp.messages.out.*",
+            "kytos/core.openflow.raw.*",
+            "kytos/mef_eline.evcs_loaded"
+        ]
+    }
 ```
+
+## POST /v1/patterns
+
+Adds patterns with their list of topics. The body looks like this:
+
+```
+    {
+        "flows": [
+            "kytos/flow_manager.flow.added"
+            ,"kytos.flow_manager.flows.single.install"
+        ]
+    }
+```
+
+## DELETE /v1/patterns/{topic}
+
+Deletes a topic from the pool.
+
+## PATCH /v1/patterns/{topic}
+
+Adds patterns only to a specific topic.
+
+## PUT /v1/patterns/{topic}
+
+Replaces the list of patterns for a specific topic.
