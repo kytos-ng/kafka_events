@@ -53,4 +53,5 @@ BLOCKED_PATTERNS = (
     "kytos/flow_manager.messages.out.*",
     "kytos/of_lldp.messages.out.*",
     "kytos/core.openflow.raw.*",
+    "kytos/mef_eline.evcs_loaded",
 )
