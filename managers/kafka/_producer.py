@@ -79,8 +79,8 @@ class Producer:
         if not self.is_ready():
             await self.initialize_producer()
         self.event_size[event_name] = max(len(encoded_data), self.event_size[event_name])
-        #topic = topic_name or self._topic
-        topic = event_name.split(".")[-1]
+        topic = topic_name or self._topic
+        #topic = event_name.split(".")[-1]
         #print(f"encoded_data size: {len(encoded_data)} bytes")
         await self._producer.send_and_wait(topic, encoded_data)
         #await asyncio.wait_for(

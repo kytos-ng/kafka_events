@@ -9,6 +9,8 @@ from asyncio import AbstractEventLoop
 import plotly.graph_objects as go
 import psutil
 from aiokafka.errors import KafkaError
+from collections import defaultdict
+
 from napps.kytos.kafka_events.settings import BLOCKED_PATTERNS
 from napps.kytos.kafka_events.managers.kafka.handler import KafkaManager
 from kytos.core import KytosEvent, KytosNApp, log, rest
@@ -41,7 +43,7 @@ class Main(KytosNApp):
         self._process.cpu_percent()
         self.cpu_count = psutil.cpu_count()
 
-        self._tasks.append(self._async_loop.create_task(self._kafka_handler.setup()))
+        #self._tasks.append(self._async_loop.create_task(self._kafka_handler.setup()))
         self._tasks.append(self._async_loop.create_task(self.set_stats()))
 
         self.events_received = 0
@@ -320,6 +322,7 @@ class Main(KytosNApp):
 
         Accepts every propagated event (uses .* regex syntax)
         """
+        return
         if self.stop_it:
             return
         self.events_received += 1

@@ -3,8 +3,9 @@
 import asyncio
 
 from aiokafka.errors import KafkaError
-
+from collections import defaultdict
 from kytos.core import log, KytosEvent
+from kytos.core.retry import before_sleep
 from napps.kytos.kafka_events.managers.kafka._producer import Producer
 from napps.kytos.kafka_events.managers.kafka._serializer import JSONSerializer
 from napps.kytos.kafka_events.settings import (
@@ -39,18 +40,18 @@ class KafkaManager:
             max_request_size=MAX_REQUEST_SIZE,
         )
         self._serializer = JSONSerializer()
-
+        self.event_sizer = defaultdict(int)
         self.eve_err = 0
         self.eve_retry = 0
         self.list_eve_sent = [0]
 
-    #@retry(
-    #    stop=stop_after_attempt(3),
-    #    before_sleep=before_sleep,
-    #    wait=wait_random(min=10, max=12),
-    #    retry=retry_if_exception_type(KafkaError),
-    #    reraise=True,
-    #)
+    @retry(
+        stop=stop_after_attempt(3),
+        before_sleep=before_sleep,
+        wait=wait_random(min=10, max=12),
+        retry=retry_if_exception_type(KafkaError),
+        reraise=True,
+    )
     async def send(self, event: KytosEvent, tries=0) -> None:
         """
         Send data to Kafka. Uses the following flow:
@@ -63,10 +64,12 @@ class KafkaManager:
         event_name: str = event.name
         event_message = event.content
         topic_name = event_message.pop("kafka_topic", None)
-
+        encoded = self._serializer.serialize_and_encode(event_name, event_message)
+        self.event_sizer[event_name] = max(self.event_sizer[event_name], len(encoded))
+        return
         try:
             await self._producer.send_data(
-                self._serializer.serialize_and_encode(event_name, event_message),
+                encoded,
                 event_name,
                 topic_name,
             )
