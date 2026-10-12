@@ -5,10 +5,20 @@ from typing import Callable
 
 from aiokafka import AIOKafkaClient, AIOKafkaProducer
 from aiokafka.conn import AIOKafkaConnection
+from aiokafka.errors import KafkaError
 from aiokafka.producer.sender import Sender
 
 from kytos.core import log
+from kytos.core.retry import before_sleep
 from napps.kytos.kafka_events.settings import KAFKA_TIMELIMIT
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_combine,
+    wait_fixed,
+    wait_random,
+)
 
 
 class Producer:
@@ -37,6 +47,7 @@ class Producer:
             linger_ms=linger_ms,
             max_batch_size=max_batch_size,
             max_request_size=max_request_size,
+            request_timeout_ms=KAFKA_TIMELIMIT * 1000,
         )
         self._topic: str = topic_name
         self._initialized: bool = False
@@ -54,6 +65,13 @@ class Producer:
 
         log.info("Successfully connected to Kafka server.")
 
+    @retry(
+        retry=retry_if_exception_type(KafkaError),
+        wait=wait_combine(wait_fixed(3), wait_random(min=7, max=12)),
+        stop=stop_after_attempt(3),
+        before_sleep=before_sleep,
+        reraise=True,
+    )
     async def send_data(self, encoded_data: bytes) -> None:
         """
         Send data to AIOKafkaProducer's batch, which is then sent to Kafka after a short delay.
@@ -65,9 +83,7 @@ class Producer:
         if not self.is_ready():
             await self.initialize_producer()
 
-        await asyncio.wait_for(
-            self._producer.send(self._topic, encoded_data), KAFKA_TIMELIMIT
-        )
+        await self._producer.send_and_wait(self._topic, encoded_data)
 
     async def shutdown(self) -> None:
         """

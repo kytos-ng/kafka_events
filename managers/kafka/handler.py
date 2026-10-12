@@ -52,11 +52,6 @@ class KafkaManager:
             await self._producer.send_data(
                 self._serializer.serialize_and_encode(event_name, event_message)
             )
-        except asyncio.TimeoutError as e:
-            log.error(
-                f"Producer tried publishing {event_name} [id: {event.id}, \
-                      timestamp: {event.timestamp}] but timed out: {e}"
-            )
         except KafkaError as e:
             log.error(f"Publishing to Kafka failed: {e}")
 
