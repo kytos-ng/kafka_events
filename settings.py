@@ -20,7 +20,7 @@ ACKS = "all"
 # attaching IDs to them. This removes possible duplicates at the cost increased
 # resource consumption
 # IMPORTANT: ENABLE_IDEMPOTENCE requires acks == "all"
-ENABLE_ITEMPOTENCE = True
+ENABLE_IDEMPOTENCE = True
 
 # Topic: (str) The name of the topic we will be sending/consuming from
 TOPIC_NAME = "event_logs"
@@ -34,7 +34,7 @@ BATCH_SIZE = 64 * 1024
 
 # Linger: (int) The amount of time (in milliseconds) that the producer will wait before
 # sending the batch.
-LINGER_MS = 0
+LINGER_MS = 50
 
 # Request Size: (int) The maximum amount (in bytes) allowed to be sent per request.
 # 1024 * 1024 * 5 == 5 MB
@@ -53,4 +53,5 @@ BLOCKED_PATTERNS = (
     "kytos/flow_manager.messages.out.*",
     "kytos/of_lldp.messages.out.*",
     "kytos/core.openflow.raw.*",
+    "kytos/mef_eline.evcs_loaded",
 )

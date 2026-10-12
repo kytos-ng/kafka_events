@@ -37,6 +37,7 @@ class Producer:
             linger_ms=linger_ms,
             max_batch_size=max_batch_size,
             max_request_size=max_request_size,
+            request_timeout_ms=KAFKA_TIMELIMIT * 1000,
         )
         self._topic: str = topic_name
         self._initialized: bool = False
@@ -54,7 +55,7 @@ class Producer:
 
         log.info("Successfully connected to Kafka server.")
 
-    async def send_data(self, encoded_data: bytes) -> None:
+    async def send_data(self, encoded_data: bytes, topic: str = None) -> None:
         """
         Send data to AIOKafkaProducer's batch, which is then sent to Kafka after a short delay.
 
@@ -65,9 +66,8 @@ class Producer:
         if not self.is_ready():
             await self.initialize_producer()
 
-        await asyncio.wait_for(
-            self._producer.send(self._topic, encoded_data), KAFKA_TIMELIMIT
-        )
+        topic = topic or self._topic
+        await self._producer.send_and_wait(topic, encoded_data)
 
     async def shutdown(self) -> None:
         """
