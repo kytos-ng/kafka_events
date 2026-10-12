@@ -90,7 +90,7 @@ class Main(KytosNApp):
 
         await self._kafka_handler.send(event, chosen_topic)
 
-    @rest("v1/patterns", methods=["GET"])
+    @rest("v1/topics", methods=["GET"])
     async def get_patterns(self, _request: Request) -> JSONResponse:
         """
         Get the list of patterns.
@@ -104,7 +104,7 @@ class Main(KytosNApp):
         }
         return JSONResponse(content=content)
 
-    @rest("v1/patterns", methods=["POST"])
+    @rest("v1/topics", methods=["POST"])
     async def add_patterns(self, request: Request) -> JSONResponse:
         """
         Add the patterns from the request
@@ -127,7 +127,7 @@ class Main(KytosNApp):
             status_code=201
         )
 
-    @rest("v1/patterns/{topic}", methods=["DELETE"])
+    @rest("v1/topics/{topic}", methods=["DELETE"])
     async def delete_pattern(self, request: Request) -> JSONResponse:
         """
         Delete the patterns from the request
@@ -144,7 +144,7 @@ class Main(KytosNApp):
         }
         return JSONResponse(msg, status_code=200)
 
-    @rest("v1/patterns/{topic}", methods=["PATCH"])
+    @rest("v1/topics/{topic}", methods=["PATCH"])
     async def update_topic(self, request: Request) -> JSONResponse:
         """
         Update (add) new patterns from the request to the selected topic.
@@ -168,7 +168,7 @@ class Main(KytosNApp):
 
         return JSONResponse(content=mod_topic, status_code=200)
 
-    @rest("v1/patterns/{topic}", methods=["PUT"])
+    @rest("v1/topics/{topic}", methods=["PUT"])
     async def replace_pattern(self, request: Request) -> JSONResponse:
         """
         Replace the patterns from the request to the selected topic.

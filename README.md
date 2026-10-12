@@ -73,7 +73,7 @@ To achieve match functionality, you must start and end your match with `^` and `
 
 # Endpoints
 
-## GET /v1/patterns
+## GET /v1/topics
 
 Lists a summary of all Pattern objects in the filtering pipeline. The response looks similar to the following:
 
@@ -96,9 +96,9 @@ Lists a summary of all Pattern objects in the filtering pipeline. The response l
     }
 ```
 
-## POST /v1/patterns
+## POST /v1/topics
 
-Adds patterns with their list of topics. The body looks like this:
+Adds topics with their list of topics. The body looks like this:
 
 ```
     {
@@ -109,14 +109,14 @@ Adds patterns with their list of topics. The body looks like this:
     }
 ```
 
-## DELETE /v1/patterns/{topic}
+## DELETE /v1/topics/{topic}
 
 Deletes a topic from the pool.
 
-## PATCH /v1/patterns/{topic}
+## PATCH /v1/topics/{topic}
 
-Adds patterns only to a specific topic.
+Adds topics only to a specific topic.
 
-## PUT /v1/patterns/{topic}
+## PUT /v1/topics/{topic}
 
 Replaces the list of patterns for a specific topic.

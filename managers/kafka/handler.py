@@ -11,7 +11,7 @@ from napps.kytos.kafka_events.settings import (
     ACKS,
     BATCH_SIZE,
     BOOTSTRAP_SERVERS,
-    ENABLE_ITEMPOTENCE,
+    ENABLE_IDEMPOTENCE,
     LINGER_MS,
     MAX_REQUEST_SIZE,
     TOPIC_NAME,
@@ -28,7 +28,7 @@ class KafkaManager:
         self._producer = Producer(
             bootstrap_servers=BOOTSTRAP_SERVERS,
             acks=ACKS,
-            enable_itempotence=ENABLE_ITEMPOTENCE,
+            enable_itempotence=ENABLE_IDEMPOTENCE,
             topic_name=TOPIC_NAME,
             max_batch_size=BATCH_SIZE,
             linger_ms=LINGER_MS,
@@ -52,11 +52,6 @@ class KafkaManager:
             await self._producer.send_data(
                 self._serializer.serialize_and_encode(event_name, event_message),
                 topic=topic,
-            )
-        except asyncio.TimeoutError as e:
-            log.error(
-                f"Producer tried publishing {event_name} [id: {event.id}, \
-                      timestamp: {event.timestamp}] but timed out: {e}"
             )
         except KafkaError as e:
             log.error(f"Publishing to Kafka failed: {e}")

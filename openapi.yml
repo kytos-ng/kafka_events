@@ -7,7 +7,7 @@ servers:
   - url: /api/kytos/kafka_events
     description: Local server.
 paths:
-  /v1/patterns:
+  /v1/topics:
     get:
       summary: Get the list of patterns.
       description: Get the list of patterns.
@@ -60,7 +60,7 @@ paths:
         '400':
           description: Topic already added.
 
-  /v1/patterns/{topic}:
+  /v1/topics/{topic}:
     delete:
       summary: Delete patterns for a specific topic.
       description: Delete pattern for a specific topic.
