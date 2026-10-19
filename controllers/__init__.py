@@ -40,11 +40,10 @@ class TopicController:
         """Get all allowed topics."""
         allowed_topics = {}
         for topic_patterns in self.db.allowed_patterns.find():
-            print(f"topic_patterns: {topic_patterns}")
             allowed_topics[topic_patterns["_id"]] = topic_patterns["patterns"]
         return allowed_topics
 
-    def insert_allowed_patterns(self, topic_dict: dict[str, List[str]]) -> None:
+    def insert_allowed_topics(self, topic_dict: dict[str, List[str]]) -> None:
         """Insert allowed topics and patterns."""
         payload = []
         for topic, patterns in topic_dict.items():

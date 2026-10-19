@@ -8,9 +8,10 @@ from collections import defaultdict
 from napps.kytos.kafka_events.settings import BLOCKED_PATTERNS
 from napps.kytos.kafka_events.managers.kafka.handler import KafkaManager
 from kytos.core import KytosEvent, KytosNApp, log, rest
-from kytos.core.helpers import alisten_to, load_spec, avalidate_openapi_request
+from kytos.core.helpers import alisten_to, load_spec, avalidate_openapi
 from kytos.core.rest_api import JSONResponse, Request, aget_json_or_400, HTTPException
 from .controllers import TopicController
+
 
 class Main(KytosNApp):
     """
@@ -91,9 +92,10 @@ class Main(KytosNApp):
         await self._kafka_handler.send(event, chosen_topic)
 
     @rest("v1/topics", methods=["GET"])
-    async def get_patterns(self, _request: Request) -> JSONResponse:
+    @avalidate_openapi(spec)
+    async def get_topics(self, _request: Request) -> JSONResponse:
         """
-        Get the list of patterns.
+        Get the list of topics.
         """
         allowed = {}
         for topic, patterns in self._allowed.items():
@@ -105,82 +107,83 @@ class Main(KytosNApp):
         return JSONResponse(content=content)
 
     @rest("v1/topics", methods=["POST"])
-    async def add_patterns(self, request: Request) -> JSONResponse:
+    @avalidate_openapi(spec)
+    async def add_topics(self, request: Request) -> JSONResponse:
         """
-        Add the patterns from the request
+        Add the topics from the request
         """
-        await avalidate_openapi_request(self.spec, request)
         data = await aget_json_or_400(request)
         for topic in data.keys():
             if topic in self._allowed:
-                msg = f"Topic {topic} is already added, " \
-                      f"Did you mean to replace or append?."
+                msg = (
+                    f"Topic {topic} is already added, "
+                    f"Did you mean to replace or append?."
+                )
                 raise HTTPException(400, detail=msg)
             # patterns arrays are checked with the openapi spec
 
         # Add to database first
-        self.topic_controller.insert_allowed_patterns(data)
+        self.topic_controller.insert_allowed_topics(data)
         self.set_allowed_topics(data)
 
-        return JSONResponse(
-            content={"topics": list(data.keys())},
-            status_code=201
-        )
+        return JSONResponse(content={"topics": list(data.keys())}, status_code=201)
 
     @rest("v1/topics/{topic}", methods=["DELETE"])
-    async def delete_pattern(self, request: Request) -> JSONResponse:
+    @avalidate_openapi(spec)
+    async def delete_topic(self, request: Request) -> JSONResponse:
         """
-        Delete the patterns from the request
+        Delete the topics from the request
         """
-        await avalidate_openapi_request(self.spec, request)
         topic = request.path_params["topic"]
         if topic not in self._allowed:
             msg = f"Topic {topic} is not present in the allowed list."
             raise HTTPException(404, detail=msg)
         self._allowed.pop(topic)
         self.topic_controller.delete_allowed_topic(topic)
-        msg = {"response": 
-               f"Topic {topic} has been removed from the allowed list."
-        }
+        msg = {"response": f"Topic {topic} has been removed from the allowed list."}
         return JSONResponse(msg, status_code=200)
 
     @rest("v1/topics/{topic}", methods=["PATCH"])
+    @avalidate_openapi(spec)
     async def update_topic(self, request: Request) -> JSONResponse:
         """
-        Update (add) new patterns from the request to the selected topic.
+        Update (add) new topics from the request to the selected topic.
         Duplicates are removed.
         """
-        await avalidate_openapi_request(self.spec, request)
         topic = request.path_params["topic"]
 
         if topic not in self._allowed:
-            raise HTTPException(404, detail=f"Topic {topic} is not present in the allowed list.")
+            raise HTTPException(
+                404, detail=f"Topic {topic} is not present in the allowed list."
+            )
 
-        patterns = await aget_json_or_400(request)
+        topics = await aget_json_or_400(request)
 
-        old_patterns = set(pat.pattern for pat in self._allowed[topic])
-        new_patterns = set(patterns)
+        old_topic = set(pat.pattern for pat in self._allowed[topic])
+        new_topic = set(topics)
 
-        adding_patterns = new_patterns | old_patterns
-        mod_topic = {topic: list(adding_patterns)}
+        adding_topics = new_topic | old_topic
+        mod_topic = {topic: list(adding_topics)}
         self.set_allowed_topics(mod_topic)
-        self.topic_controller.insert_allowed_patterns(mod_topic)
+        self.topic_controller.insert_allowed_topics(mod_topic)
 
         return JSONResponse(content=mod_topic, status_code=200)
 
     @rest("v1/topics/{topic}", methods=["PUT"])
+    @avalidate_openapi(spec)
     async def replace_pattern(self, request: Request) -> JSONResponse:
         """
         Replace the patterns from the request to the selected topic.
         """
-        await avalidate_openapi_request(self.spec, request)
         topic = request.path_params["topic"]
 
         if topic not in self._allowed:
-            raise HTTPException(404, detail=f"Topic {topic} is not present in the allowed list.")
+            raise HTTPException(
+                404, detail=f"Topic {topic} is not present in the allowed list."
+            )
 
         patterns = await aget_json_or_400(request)
         self.set_allowed_topics({topic: patterns})
-        self.topic_controller.insert_allowed_patterns({topic: patterns})
+        self.topic_controller.insert_allowed_topics({topic: patterns})
 
         return JSONResponse(content={topic: patterns}, status_code=200)
