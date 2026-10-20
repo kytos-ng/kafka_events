@@ -42,7 +42,7 @@ MAX_REQUEST_SIZE = 1024 * 1024 * 5
 
 # Kafka Time Limit: (float | int) The amount of time (in seconds) that any connection to kafka must
 # complete before.
-KAFKA_TIMELIMIT = 10
+KAFKA_TIMELIMIT = 40
 
 # FILTERING
 
@@ -53,5 +53,6 @@ BLOCKED_PATTERNS = (
     "kytos/flow_manager.messages.out.*",
     "kytos/of_lldp.messages.out.*",
     "kytos/core.openflow.raw.*",
-    "kytos/mef_eline.evcs_loaded",
+    "kytos/core.interface_tags",
+    "kytos/of_lldp.interface.is.nni",
 )

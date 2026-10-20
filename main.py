@@ -37,7 +37,6 @@ class Main(KytosNApp):
         self.set_allowed_topics()
 
         self._tasks.append(self._async_loop.create_task(self._kafka_handler.setup()))
-        self.aldo = None
 
     def execute(self):
         """
@@ -71,6 +70,21 @@ class Main(KytosNApp):
             for pattern in patterns:
                 self._allowed[topic].append(re.compile(pattern))
 
+    def _remove_redundant(self, new_patterns: set[str], topic: str) -> list[str]:
+        """Remove patterns covered by another pattern in the set."""
+        non_redundant = []
+        for str_pattern in new_patterns:
+            is_redundant = False
+            for re_pattern in self._allowed[topic]:
+                if re_pattern.search(str_pattern):
+                    is_redundant = True
+                    break
+
+            if not is_redundant:
+                non_redundant.append(str_pattern)
+
+        return non_redundant + [pattern.pattern for pattern in self._allowed[topic]]
+
     @alisten_to(".*")
     async def handle_events(self, event: KytosEvent):
         """
@@ -93,7 +107,7 @@ class Main(KytosNApp):
 
     @rest("v1/topics", methods=["GET"])
     @avalidate_openapi(spec)
-    async def get_topics(self, _request: Request) -> JSONResponse:
+    async def get_topics(self, _) -> JSONResponse:
         """
         Get the list of topics.
         """
@@ -157,13 +171,10 @@ class Main(KytosNApp):
                 404, detail=f"Topic {topic} is not present in the allowed list."
             )
 
-        topics = await aget_json_or_400(request)
+        new_patterns = await aget_json_or_400(request)
 
-        old_topic = set(pat.pattern for pat in self._allowed[topic])
-        new_topic = set(topics)
-
-        adding_topics = new_topic | old_topic
-        mod_topic = {topic: list(adding_topics)}
+        adding_topics = self._remove_redundant(set(new_patterns), topic)
+        mod_topic = {topic: adding_topics}
         self.set_allowed_topics(mod_topic)
         self.topic_controller.insert_allowed_topics(mod_topic)
 
