@@ -3,7 +3,7 @@
 from napps.kytos.kafka_events.managers.kafka._producer import Producer
 from napps.kytos.kafka_events.settings import (
     ACKS,
-    ENABLE_ITEMPOTENCE,
+    ENABLE_IDEMPOTENCE,
     TOPIC_NAME,
     BATCH_SIZE,
     LINGER_MS,
@@ -15,7 +15,7 @@ from napps.kytos.kafka_events.settings import (
 async def create_and_initialize_producer(
     bootstrap_servers: str,
     acks: str = ACKS,
-    enable_itempotence: str = ENABLE_ITEMPOTENCE,
+    enable_itempotence: str = ENABLE_IDEMPOTENCE,
     topic_name: str = TOPIC_NAME,
     max_batch_size: int = BATCH_SIZE,
     linger_ms: int = LINGER_MS,
