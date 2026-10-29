@@ -44,6 +44,9 @@ MAX_REQUEST_SIZE = 1024 * 1024 * 5
 # complete before.
 KAFKA_TIMELIMIT = 10
 
+# Kafka error log interval: (int) The amount of time (in seconds) between repeated Kafka
+# retries to reconnect when an event is sent.
+KAFKA_ERROR_LOG_INTERVAL = 60
 # FILTERING
 
 # Blocked patterns: list[str], The patterns we want to explicitly block. This takes precendence
