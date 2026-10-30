@@ -46,6 +46,7 @@ class TestHandler:
 
         handler = KafkaManager()
         await handler.setup()
+        handler._producer.is_ready = lambda: True
 
         event = KytosEvent(name="Test", content={"Data": "Test"})
         await handler.send(event)
@@ -54,7 +55,7 @@ class TestHandler:
 
         producer_mock.assert_called_once()
         mock_instance.start.assert_called_once()
-        mock_instance.send.assert_called_once()
+        mock_instance.send_and_wait.assert_called_once()
 
     @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
     async def test_send_returns_when_producer_is_closed(
@@ -100,6 +101,7 @@ class TestHandler:
 
         handler = KafkaManager()
         await handler.setup()
+        handler._producer.is_ready = lambda: True
 
         event = KytosEvent(name="Test", content={"Test": "Test"})
 
@@ -108,7 +110,7 @@ class TestHandler:
         # Assert mocks
 
         mock_instance.start.assert_called_once()
-        mock_instance.send.assert_called_once()
+        mock_instance.send_and_wait.assert_called_once()
 
     @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
     async def test_shutdown_only_cancels_valid_data(
