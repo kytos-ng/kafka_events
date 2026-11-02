@@ -20,4 +20,5 @@ Added
 - Added DELETE /v1/topics/{topic} to delete a specific topic.
 - Added PATCH /v1/topics/{topic} to add more topics to a specific topic.
 - Added PUT /v1/topics/{topic} to replace the list of patterns for a specific topic.
+- When kytos initializes without Kafka broker available, the NApp will keep trying to connect after an event is sent every ``KAFKA_ERROR_LOG_INTERVAL`` seconds. The default value is 60 seconds.
 

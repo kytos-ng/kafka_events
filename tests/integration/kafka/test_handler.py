@@ -48,6 +48,7 @@ class TestHandler:
 
         handler = KafkaManager()
         await handler.setup()
+        handler._producer.is_ready = lambda: True
 
         event = KytosEvent(name="Test", content={"Data": "Test"})
         await handler.send(event)
@@ -102,6 +103,7 @@ class TestHandler:
 
         handler = KafkaManager()
         await handler.setup()
+        handler._producer.is_ready = lambda: True
 
         event = KytosEvent(name="Test", content={"Test": "Test"})
 

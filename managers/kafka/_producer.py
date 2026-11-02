@@ -1,14 +1,15 @@
 """ The producer suite. A package-private class that handles enqueueing data to be sent to Kafka """
 
 import asyncio
-from typing import Callable
+from time import monotonic
+from typing import Callable, Optional
 
 from aiokafka import AIOKafkaClient, AIOKafkaProducer
 from aiokafka.conn import AIOKafkaConnection
 from aiokafka.producer.sender import Sender
 
 from kytos.core import log
-from napps.kytos.kafka_events.settings import KAFKA_TIMELIMIT
+from napps.kytos.kafka_events.settings import KAFKA_ERROR_LOG_INTERVAL, KAFKA_TIMELIMIT
 
 
 class Producer:
@@ -42,6 +43,7 @@ class Producer:
         self._topic: str = topic_name
         self._initialized: bool = False
         self._lock = asyncio.Lock()
+        self._last_initialization_attempt: Optional[float] = None
 
     async def initialize_producer(self) -> None:
         """
@@ -50,6 +52,13 @@ class Producer:
         async with self._lock:
             if self._initialized:
                 return
+            now = monotonic()
+            if (
+                self._last_initialization_attempt is not None
+                and now - self._last_initialization_attempt < self.error_log_interval
+            ):
+                return
+            self._last_initialization_attempt = now
             await asyncio.wait_for(self._producer.start(), KAFKA_TIMELIMIT)
             self._initialized = True
 
