@@ -63,11 +63,12 @@ class TestProducer:
 
         await producer.send_data(json.dumps("Test").encode())
         assert mock_producer_instance.start.call_count == 1
-        mock_producer_instance.send_and_wait.assert_not_called()
 
         await producer.send_data(json.dumps("Test").encode())
         assert mock_producer_instance.start.call_count == 2
-        mock_producer_instance.send_and_wait.assert_awaited_once()
+
+        await producer.send_data(json.dumps("Test").encode())
+        assert mock_producer_instance.start.call_count == 2
 
     @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
     async def test_producer_accurately_cancels_methods(

@@ -44,6 +44,7 @@ class Producer:
         self._initialized: bool = False
         self._lock = asyncio.Lock()
         self._last_initialization_attempt: Optional[float] = None
+        self.error_log_interval = KAFKA_ERROR_LOG_INTERVAL
 
     async def initialize_producer(self) -> None:
         """

@@ -167,6 +167,22 @@ class TestMain:
         assert top_control.insert_allowed_topics.call_count == 0
         assert set_topics_mock.call_count == 1
 
+    @patch("napps.kytos.kafka_events.main.Main.set_allowed_topics")
+    async def test_add_topics_numeric_topic_error(self, set_topics_mock):
+        """Test add_topics method with a purely numeric topic."""
+        api_client = await self.get_client()
+        payload = {
+            "123": ["pattern1", "pattern2"],
+            "mocked_topic": ["pattern3", "pattern4"],
+        }
+        endpoint = f"{self.base_endpoint}/topics"
+        response = await api_client.post(endpoint, json=payload)
+
+        assert response.status_code == 400
+        top_control = self.napp.topic_controller
+        assert top_control.insert_allowed_topics.call_count == 0
+        assert set_topics_mock.call_count == 1
+
     async def test_delete_topic(self):
         """Test delete_topic method."""
         api_client = await self.get_client()
