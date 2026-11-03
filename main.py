@@ -128,6 +128,9 @@ class Main(KytosNApp):
         """
         data = await aget_json_or_400(request)
         for topic in data.keys():
+            if topic.isdigit():
+                msg = "Topic names cannot be purely numeric."
+                raise HTTPException(400, detail=msg)
             if topic in self._allowed:
                 msg = (
                     f"Topic {topic} is already added, "
