@@ -4,7 +4,9 @@ import asyncio
 from unittest.mock import patch, MagicMock, AsyncMock, Mock
 import re
 
+import pytest
 from kytos.core import KytosEvent
+from kytos.core.rest_api import HTTPException
 from kytos.lib.helpers import get_test_client, get_controller_mock
 from napps.kytos.kafka_events.main import Main
 from napps.kytos.kafka_events.tests.helpers.mocked_functions import (
@@ -129,6 +131,60 @@ class TestMain:
         assert response.json() == expected
         assert response.status_code == 200
 
+    async def test_set_allowed_topics_loads_all_topics(self):
+        """Test loading multiple topics compiles every pattern."""
+        await self.get_client()
+
+        self.napp.set_allowed_topics(
+            {
+                "topic-a": ["event-a"],
+                "topic-b": ["event-b"],
+            }
+        )
+
+        assert set(self.napp._allowed) == {"topic-a", "topic-b"}
+        assert self.napp._allowed["topic-a"][0].pattern == "event-a"
+        assert self.napp._allowed["topic-b"][0].pattern == "event-b"
+
+    async def test_set_allowed_topics_not_partial_update(self):
+        """Test invalid patterns do not partially update allowed topics."""
+        await self.get_client()
+        self.napp._allowed = {"existing": [re.compile("existing")]}
+
+        with pytest.raises(HTTPException):
+            self.napp.set_allowed_topics(
+                {
+                    "valid": ["valid"],
+                    "invalid": ["["],
+                }
+            )
+
+        assert len(self.napp._allowed) == 1
+        assert "existing" in self.napp._allowed
+
+    async def test_add_topics_invalid_pattern(self):
+        """Test invalid patterns are rejected before database persistence."""
+        api_client = await self.get_client()
+        payload = {"broken": ["["]}
+
+        response = await api_client.post(f"{self.base_endpoint}/topics", json=payload)
+
+        assert response.status_code == 400
+        assert self.napp.topic_controller.insert_allowed_topics.call_count == 0
+        assert "broken" not in self.napp._allowed
+
+    async def test_set_allowed_topics_rejects_invalid_database_pattern(self):
+        """Test invalid patterns loaded from the database fail explicitly."""
+        await self.get_client()
+        self.napp.topic_controller.get_allowed_topics_patterns.return_value = {
+            "broken": ["["]
+        }
+
+        with pytest.raises(re.error):
+            self.napp.set_allowed_topics()
+
+        assert "broken" not in self.napp._allowed
+
     @patch("napps.kytos.kafka_events.main.Main.set_allowed_topics")
     async def test_add_topics(self, set_topics_mock: Mock):
         """Test add_topics method."""
@@ -218,8 +274,8 @@ class TestMain:
         assert top_control.insert_allowed_topics.call_count == 1
         assert len(self.napp._allowed["new_topic"]) == 3
 
-    async def test_update_topic_ignores_redundant(self):
-        """Test update_topic ignores patterns covered by an existing pattern."""
+    async def test_update_topic_keeps_non_identical_patterns(self):
+        """Test update_topic keeps patterns that are not identical."""
         api_client = await self.get_client()
 
         self.napp._allowed = {"new_topic": [re.compile("event.*")]}
@@ -227,8 +283,20 @@ class TestMain:
         response = await api_client.patch(endpoint, json=["event.other.*"])
 
         assert response.status_code == 200
-        assert response.json() == {"new_topic": ["event.*"]}
-        assert len(self.napp._allowed["new_topic"]) == 1
+        assert set(response.json()["new_topic"]) == {"event.*", "event.other.*"}
+        assert len(self.napp._allowed["new_topic"]) == 2
+
+    async def test_update_topic_keeps_regex_alternatives(self):
+        """Test update_topic keeps a pattern that expands existing matches."""
+        api_client = await self.get_client()
+
+        self.napp._allowed = {"new_topic": [re.compile("foo")]}
+        endpoint = f"{self.base_endpoint}/topics/new_topic"
+        response = await api_client.patch(endpoint, json=["foo|bar"])
+
+        assert response.status_code == 200
+        assert set(response.json()["new_topic"]) == {"foo", "foo|bar"}
+        assert len(self.napp._allowed["new_topic"]) == 2
 
     async def test_update_topic_removes_duplicates(self):
         """Test update_topic removes duplicate patterns."""

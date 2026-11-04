@@ -62,28 +62,39 @@ class Main(KytosNApp):
         """
         Set the allowed topics and their patterns.
         """
+        from_db = False
         if allowed_topics is None:
             allowed_topics = self.topic_controller.get_allowed_topics_patterns()
+            from_db = True
 
+        compiled_topics = {}
         for topic, patterns in allowed_topics.items():
-            self._allowed[topic] = []
+            new_compiles = []
+
             for pattern in patterns:
-                self._allowed[topic].append(re.compile(pattern))
+                try:
+                    new_compiles.append(re.compile(pattern))
+                except re.error as err:
+                    msg = f"Invalid regex pattern: {pattern} in topic: {topic}"
+                    # If no allowed_topics are provided, it means the
+                    # topics were gotten from the database.
+                    if from_db:
+                        log.error(msg)
+                        raise err
+                    # Otherwise, it means the allowed_topics were provided by the user.
+                    raise HTTPException(400, detail=msg) from err
+
+            compiled_topics[topic] = new_compiles
+        self._allowed.update(compiled_topics)
 
     def _remove_redundant(self, new_patterns: set[str], topic: str) -> list[str]:
-        """Remove patterns covered by another pattern in the set."""
+        """Remove patterns identical to an existing pattern."""
+        existing_patterns = {pattern.pattern for pattern in self._allowed[topic]}
         non_redundant = []
-        for str_pattern in new_patterns:
-            is_redundant = False
-            for re_pattern in self._allowed[topic]:
-                if re_pattern.search(str_pattern):
-                    is_redundant = True
-                    break
-
-            if not is_redundant:
-                non_redundant.append(str_pattern)
-
-        return non_redundant + [pattern.pattern for pattern in self._allowed[topic]]
+        for pattern in new_patterns:
+            if pattern not in existing_patterns:
+                non_redundant.append(pattern)
+        return non_redundant + list(existing_patterns)
 
     @alisten_to(".*")
     async def handle_events(self, event: KytosEvent):
@@ -139,9 +150,8 @@ class Main(KytosNApp):
                 raise HTTPException(400, detail=msg)
             # patterns arrays are checked with the openapi spec
 
-        # Add to database first
-        self.topic_controller.insert_allowed_topics(data)
         self.set_allowed_topics(data)
+        self.topic_controller.insert_allowed_topics(data)
 
         return JSONResponse(content={"topics": list(data.keys())}, status_code=201)
 

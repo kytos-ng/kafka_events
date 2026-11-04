@@ -49,11 +49,7 @@ class TestProducer:
         error interval has elapsed.
         """
         mock_producer_instance: MagicMock = mock_producer.return_value
-        mock_producer_instance.start.side_effect = [
-            simple_async_func(),
-            simple_async_func(),
-            simple_async_func(),
-        ]
+        mock_producer_instance.start.side_effect = simple_async_func
         mock_producer_instance.send_and_wait = AsyncMock()
         mock_monotonic.side_effect = [0, 1, 61]
 
