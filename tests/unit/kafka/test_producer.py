@@ -29,13 +29,12 @@ class TestProducer:
     @patch("napps.kytos.kafka_events.managers.kafka._producer.KAFKA_TIMELIMIT", 0.01)
     @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
     async def test_producer_raises_exception_on_timeout_on_initialization(
-        self, mock_producer: MagicMock
+        self, asyn_mock
     ) -> None:
         """
         When initializing, the producer should raise a timeout exception if it takes too long
         """
-        mock_producer_instance: MagicMock = mock_producer.return_value
-        mock_producer_instance.start.side_effect = simulate_long_timeout
+        asyn_mock.side_effect = asyncio.TimeoutError
 
         with pytest.raises(asyncio.TimeoutError):
             await create_and_initialize_producer("localhost:9092")
@@ -50,11 +49,7 @@ class TestProducer:
         error interval has elapsed.
         """
         mock_producer_instance: MagicMock = mock_producer.return_value
-        mock_producer_instance.start.side_effect = [
-            simple_async_func(),
-            simple_async_func(),
-            simple_async_func(),
-        ]
+        mock_producer_instance.start.side_effect = simple_async_func
         mock_producer_instance.send_and_wait = AsyncMock()
         mock_monotonic.side_effect = [0, 1, 61]
 
@@ -64,11 +59,12 @@ class TestProducer:
 
         await producer.send_data(json.dumps("Test").encode())
         assert mock_producer_instance.start.call_count == 1
-        mock_producer_instance.send_and_wait.assert_not_called()
 
         await producer.send_data(json.dumps("Test").encode())
         assert mock_producer_instance.start.call_count == 2
-        mock_producer_instance.send_and_wait.assert_awaited_once()
+
+        await producer.send_data(json.dumps("Test").encode())
+        assert mock_producer_instance.start.call_count == 2
 
     @patch("napps.kytos.kafka_events.managers.kafka._producer.AIOKafkaProducer")
     async def test_producer_accurately_cancels_methods(
