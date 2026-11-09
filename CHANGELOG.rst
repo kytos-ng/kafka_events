@@ -7,6 +7,10 @@ All notable changes to the kafka_events NApp are documented in this file.
 [2026.1.0] - 2026-04-28
 ***********************
 
+Fixed
+=====
+- Endpoint POST /v1/topics now removes redundant patterns before persisting them.
+
 Changed
 =======
 - Changed the endpoint from GET /v1/filters to GET /v1/topics and updated it to return allowed and blocked patterns.
@@ -21,4 +25,3 @@ Added
 - Added PATCH /v1/topics/{topic} to add more topics to a specific topic.
 - Added PUT /v1/topics/{topic} to replace the list of patterns for a specific topic.
 - When kytos initializes without Kafka broker available, the NApp will keep trying to connect after an event is sent every ``KAFKA_ERROR_LOG_INTERVAL`` seconds. The default value is 60 seconds.
-

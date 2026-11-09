@@ -149,6 +149,7 @@ class Main(KytosNApp):
                 )
                 raise HTTPException(400, detail=msg)
             # patterns arrays are checked with the openapi spec
+            data[topic] = list(dict.fromkeys(data[topic]))
 
         self.set_allowed_topics(data)
         self.topic_controller.insert_allowed_topics(data)

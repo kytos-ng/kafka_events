@@ -239,6 +239,30 @@ class TestMain:
         assert top_control.insert_allowed_topics.call_count == 0
         assert set_topics_mock.call_count == 1
 
+    @patch("napps.kytos.kafka_events.main.Main.set_allowed_topics")
+    async def test_add_topics_redundant_patterns(self, set_topics_mock):
+        """Test add_topics method removes redundant patterns."""
+        api_client = await self.get_client()
+        payload = {
+            "new_topic": ["pattern1", "pattern1", "pattern2"],
+            "mocked_topic": ["pattern3", "pattern4"],
+        }
+        endpoint = f"{self.base_endpoint}/topics"
+        response = await api_client.post(endpoint, json=payload)
+
+        assert response.status_code == 201
+        top_control = self.napp.topic_controller
+        assert top_control.insert_allowed_topics.call_count == 1
+        assert top_control.insert_allowed_topics.call_args[0][0] == {
+            "new_topic": ["pattern1", "pattern2"],
+            "mocked_topic": ["pattern3", "pattern4"],
+        }
+        assert set_topics_mock.call_count == 2
+        assert set_topics_mock.call_args[0][0] == {
+            "new_topic": ["pattern1", "pattern2"],
+            "mocked_topic": ["pattern3", "pattern4"],
+        }
+
     async def test_delete_topic(self):
         """Test delete_topic method."""
         api_client = await self.get_client()
